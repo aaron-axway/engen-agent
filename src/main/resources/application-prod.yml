@@ -1,0 +1,47 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:webhookdb}
+    username: ${POSTGRES_USER:webhook_user}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+    show-sql: false
+  
+  h2:
+    console:
+      enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.example.webhookservice: INFO
+    org.springframework.security: INFO
+  file:
+    name: /var/log/webhook-service/application.log
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+servicenow:
+  api:
+    table-name: ${SERVICENOW_TABLE_NAME:amplify_access_request}
+
+event:
+  cleanup:
+    enabled: ${EVENT_CLEANUP_ENABLED:true}  # Enabled in production by default
+    retention-days: ${EVENT_RETENTION_DAYS:90}  # 90 days retention in production
+    batch-size: ${EVENT_CLEANUP_BATCH_SIZE:1000}
+    cron: ${EVENT_CLEANUP_CRON:0 0 2 * * ?}  # 2 AM daily
+    ignored-cron: ${EVENT_CLEANUP_IGNORED_CRON:0 30 1 * * ?}  # 1:30 AM daily

@@ -1,0 +1,990 @@
+{
+   "openapi": "3.0.1",
+   "info": {
+      "title": "ServiceNowCatalogExt",
+      "description": "APIs related to the Service Catalog object.\r\n\r\nSee documentation for `Service Catalog API` here: https://docs.servicenow.com/bundle/washingtondc-api-reference/page/integrate/inbound-rest/concept/c_ServiceCatalogAPI.html ",
+      "version": "v1",
+      "x-summary": "The Service Catalog API provides endpoints that access Service Catalog configuration and actions from within a Service Portal."
+   },
+   "servers": [
+      {
+         "url": "https://apiqa.hmhs.com/snow/v1/servicecatalog/ext"
+      }
+   ],
+   "paths": {
+      "/items/{sys_id}": {
+         "get": {
+            "summary": "Retrieves a specified catalog item.",
+            "description": "Retrieves a specified catalog item.",
+            "operationId": "GET /api/sn_sc/servicecatalog/items/{sys_id}",
+            "parameters": [
+               {
+                  "name": "sysparm_view",
+                  "in": "query",
+                  "description": "View type",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": "mobile, desktop"
+                  }
+               },
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/cart/{cart_item_id}": {
+         "put": {
+            "summary": "Updates the specified item in the logged in user's cart.",
+            "description": "Updates the specified item in the logged in user's cart.",
+            "operationId": "PUT /api/sn_sc/servicecatalog/cart/{cart_item_id}",
+            "parameters": [
+               {
+                  "name": "cart_item_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/cart": {
+         "get": {
+            "summary": "Retrieves the details of the items within the logged in user's cart.",
+            "description": "Retrieves the details of the items within the logged in user's cart.",
+            "operationId": "GET /api/sn_sc/servicecatalog/cart",
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/items/{sys_id}/order_now": {
+         "post": {
+            "summary": "Orders the specified catalog item.",
+            "description": "Orders the specified catalog item.",
+            "operationId": "POST /api/sn_sc/servicecatalog/items/{sys_id}/order_now",
+            "parameters": [
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/catalogs": {
+         "get": {
+            "summary": "Retrives the list of catalogs you have access to",
+            "description": "Retrives the list of catalogs you have access to",
+            "operationId": "GET /api/sn_sc/servicecatalog/catalogs",
+            "parameters": [
+               {
+                  "name": "sysparm_view",
+                  "in": "query",
+                  "description": "View type",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": "mobile, desktop"
+                  }
+               },
+               {
+                  "name": "sysparm_limit",
+                  "in": "query",
+                  "description": "Specifies number of entities in the response. Applies to categories, items",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": "10"
+                  }
+               },
+               {
+                  "name": "sysparm_text",
+                  "in": "query",
+                  "description": "Query text for search support. This is required",
+                  "required": true,
+                  "schema": {
+                     "type": "object",
+                     "example": ""
+                  }
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/service_fulfillment/step/{sys_id}": {
+         "put": {
+            "operationId": "PUT /api/sn_sc/servicecatalog/service_fulfillment/step/{sys_id}",
+            "parameters": [
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/catalog_builder/validate_catalog_categories": {
+         "get": {
+            "summary": "Validates Catalog Categories",
+            "operationId": "GET /api/sn_sc/servicecatalog/catalog_builder/validate_catalog_categories",
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/items/{sys_id}/add_to_cart": {
+         "post": {
+            "summary": "Adds a catalog item to the cart for checkout",
+            "description": "Adds a catalog item to the cart for checkout",
+            "operationId": "POST /api/sn_sc/servicecatalog/items/{sys_id}/add_to_cart",
+            "parameters": [
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/items/{sys_id}/submit_producer": {
+         "post": {
+            "summary": "Creates a record and returns the Table API relative path and redirect URL to access the created record.",
+            "description": "Creates a record and returns the Table API relative path and redirect URL to access the created record.",
+            "operationId": "POST /api/sn_sc/servicecatalog/items/{sys_id}/submit_producer",
+            "parameters": [
+               {
+                  "name": "sysparm_view",
+                  "in": "query",
+                  "description": "View type",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": "mobile, desktop"
+                  }
+               },
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/template/{sys_id}/duplicate": {
+         "post": {
+            "operationId": "POST /api/sn_sc/servicecatalog/template/{sys_id}/duplicate",
+            "parameters": [
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/catalogs/{sys_id}": {
+         "get": {
+            "summary": "Retrieves the available information for a specified catalog.",
+            "description": "Retrieves the available information for a specified catalog.",
+            "operationId": "GET /api/sn_sc/servicecatalog/catalogs/{sys_id}",
+            "parameters": [
+               {
+                  "name": "sysparm_view",
+                  "in": "query",
+                  "description": "View type",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": "mobile, desktop"
+                  }
+               },
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/cart/submit_order": {
+         "post": {
+            "summary": "Checks out the user cart, based on the current check-out type (one-step or two-step).",
+            "description": "Checks out the user cart, based on the current check-out type (one-step or two-step).",
+            "operationId": "POST /api/sn_sc/servicecatalog/cart/submit_order",
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/variables/{sys_id}/dynamic_value": {
+         "post": {
+            "operationId": "POST /api/sn_sc/servicecatalog/variables/{sys_id}/dynamic_value",
+            "parameters": [
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/items": {
+         "get": {
+            "summary": "Retrieves a list of catalog items based on the specified parameters.",
+            "description": "Retrieves a list of catalog items based on the specified parameters.",
+            "operationId": "GET /api/sn_sc/servicecatalog/items",
+            "parameters": [
+               {
+                  "name": "sysparm_category",
+                  "in": "query",
+                  "description": "Category sys_id",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": ""
+                  }
+               },
+               {
+                  "name": "sysparm_type",
+                  "in": "query",
+                  "description": "Used by Item Search to search for the specific type of Item",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": "record_producer"
+                  }
+               },
+               {
+                  "name": "sysparm_limit",
+                  "in": "query",
+                  "description": "Specifies number of entities in the response. Applies to categories, items",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": "10"
+                  }
+               },
+               {
+                  "name": "sysparm_view",
+                  "in": "query",
+                  "description": "View type",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": "mobile, desktop"
+                  }
+               },
+               {
+                  "name": "sysparm_text",
+                  "in": "query",
+                  "description": "Query text for search support. This is required",
+                  "required": true,
+                  "schema": {
+                     "type": "object",
+                     "example": ""
+                  }
+               },
+               {
+                  "name": "sysparm_offset",
+                  "in": "query",
+                  "description": "",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": ""
+                  }
+               },
+               {
+                  "name": "sysparm_catalog",
+                  "in": "query",
+                  "description": "Catalog sys_id",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": ""
+                  }
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/variables/{sys_id}/validate_regex": {
+         "post": {
+            "operationId": "POST /api/sn_sc/servicecatalog/variables/{sys_id}/validate_regex",
+            "parameters": [
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/items/{sys_id}/variables": {
+         "get": {
+            "summary": "Retrives variables of a catalog item",
+            "description": "Retrives variables of a catalog item",
+            "operationId": "GET /api/sn_sc/servicecatalog/items/{sys_id}/variables",
+            "parameters": [
+               {
+                  "name": "sysparm_view",
+                  "in": "query",
+                  "description": "View type",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": "mobile, desktop"
+                  }
+               },
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/items/{sys_id}/checkout_guide": {
+         "post": {
+            "summary": "Checkout items of an order guide.",
+            "description": "Checkout items of an order guide.",
+            "operationId": "POST /api/sn_sc/servicecatalog/items/{sys_id}/checkout_guide",
+            "parameters": [
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/service_fulfillment/step_configs": {
+         "get": {
+            "operationId": "GET /api/sn_sc/servicecatalog/service_fulfillment/step_configs",
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/service_fulfillment/step": {
+         "post": {
+            "operationId": "POST /api/sn_sc/servicecatalog/service_fulfillment/step",
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/variables/{table_name}/{sys_id}": {
+         "put": {
+            "operationId": "PUT /api/sn_sc/servicecatalog/variables/{table_name}/{sys_id}",
+            "parameters": [
+               {
+                  "name": "table_name",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               },
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/producer/{producer_id}/record/{record_id}": {
+         "get": {
+            "operationId": "GET /api/sn_sc/servicecatalog/producer/{producer_id}/record/{record_id}",
+            "parameters": [
+               {
+                  "name": "producer_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               },
+               {
+                  "name": "record_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/variableSetLayout": {
+         "post": {
+            "operationId": "POST /api/sn_sc/servicecatalog/variableSetLayout",
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/items/{sys_id}/submit_guide": {
+         "put": {
+            "summary": "Retrieves a list of items based on the needs described for an order guide.",
+            "description": "Retrieves a list of items based on the needs described for an order guide.",
+            "operationId": "PUT /api/sn_sc/servicecatalog/items/{sys_id}/submit_guide",
+            "parameters": [
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/categories/{sys_id}": {
+         "get": {
+            "summary": "Retrieves the available information for a specified category.",
+            "description": "Retrieves the available information for a specified category.",
+            "operationId": "GET /api/sn_sc/servicecatalog/categories/{sys_id}",
+            "parameters": [
+               {
+                  "name": "sysparm_view",
+                  "in": "query",
+                  "description": "View type",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": "mobile, desktop"
+                  }
+               },
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/cart/checkout": {
+         "post": {
+            "summary": "Retrieves and processes the checkout for the current cart based on whether the two-step checkout process is enabled.",
+            "description": "Retrieves and processes the checkout for the current cart based on whether the two-step checkout process is enabled.",
+            "operationId": "POST /api/sn_sc/servicecatalog/cart/checkout",
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/variables/{sys_id}/display_value": {
+         "post": {
+            "operationId": "POST /api/sn_sc/servicecatalog/variables/{sys_id}/display_value",
+            "parameters": [
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "requestBody": {
+               "content": {
+                  "application/xml": {},
+                  "application/json": {},
+                  "text/xml": {}
+               }
+            },
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      },
+      "/catalogs/{sys_id}/categories": {
+         "get": {
+            "summary": "Retrieves the list of available categories for the specified catalog.",
+            "description": "Retrieves the list of available categories for the specified catalog.",
+            "operationId": "GET /api/sn_sc/servicecatalog/catalogs/{sys_id}/categories",
+            "parameters": [
+               {
+                  "name": "sysparm_top_level_only",
+                  "in": "query",
+                  "description": "Show only top level categories",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": "true"
+                  }
+               },
+               {
+                  "name": "sysparm_limit",
+                  "in": "query",
+                  "description": "Specifies number of entities in the response. Applies to categories, items",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": "10"
+                  }
+               },
+               {
+                  "name": "sysparm_view",
+                  "in": "query",
+                  "description": "View type",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": "mobile, desktop"
+                  }
+               },
+               {
+                  "name": "sysparm_offset",
+                  "in": "query",
+                  "description": "",
+                  "required": false,
+                  "schema": {
+                     "type": "object",
+                     "example": ""
+                  }
+               },
+               {
+                  "name": "sys_id",
+                  "in": "path",
+                  "required": true,
+                  "schema": {
+                     "type": "object"
+                  }
+               }
+            ],
+            "responses": {
+               "200": {
+                  "description": "ok",
+                  "content": {
+                     "application/xml": {},
+                     "application/json": {},
+                     "text/xml": {}
+                  }
+               }
+            }
+         }
+      }
+   },
+   "x-axway": {
+      "serviceType": "rest",
+      "basePaths": [
+         "https://apiqa.hmhs.com"
+      ],
+      "expired": false,
+      "retirementDate": 0,
+      "corsEnabled": true,
+      "deprecated": false,
+      "availableSDK": {
+         "ios-swift": "/discovery/sdk/39e5b406-7d1a-462e-a24e-5816c404d0ba/ios-swift",
+         "android": "/discovery/sdk/39e5b406-7d1a-462e-a24e-5816c404d0ba/android",
+         "nodejs": "/discovery/sdk/39e5b406-7d1a-462e-a24e-5816c404d0ba/nodejs"
+      },
+      "apiResourceType": "oas30",
+      "id": "39e5b406-7d1a-462e-a24e-5816c404d0ba",
+      "state": "published",
+      "accessGrantedDate": 1758642289083,
+      "tags": {
+         "API-Cloud": [
+            "ServiceNow",
+            "SNOW"
+         ],
+         "Audience": [
+            "Technology"
+         ],
+         "Domain": [
+            "Technology"
+         ],
+         "API-Type": [
+            "system"
+         ]
+      }
+   }
+}

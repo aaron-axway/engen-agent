@@ -1,0 +1,71 @@
+# Email Template Configuration
+# This file contains all email notification templates for the webhook service
+# Templates use simple placeholder replacement: {variableName}
+#
+# Available Placeholders by Template:
+#
+# servicenowTicket: {ticketId}, {eventId}, {eventType}, {source}, {correlationId}, {timestamp}, {payload}
+# approval: {approvalStatus}, {approvalStatusColor}, {eventId}, {eventType}, {correlationId}, {comments}, {timestamp}
+# error: {eventId}, {eventType}, {source}, {errorMessage}, {exceptionDetails}, {timestamp}
+#
+# Note: Multiline YAML strings use | for literal blocks. Indentation matters!
+
+email:
+  templates:
+    servicenowTicket:
+      subject: "{subjectPrefix} ServiceNow Ticket Created: {ticketId}"
+      body: |
+        <html><body>
+        <h2>ServiceNow Ticket Created</h2>
+        <p>A new ServiceNow ticket has been created for a webhook event.</p>
+        <h3>Ticket Details</h3>
+        <table border='1' style='border-collapse: collapse; width: 100%;'>
+        <tr><td><strong>Ticket ID</strong></td><td>{ticketId}</td></tr>
+        <tr><td><strong>Event ID</strong></td><td>{eventId}</td></tr>
+        <tr><td><strong>Event Type</strong></td><td>{eventType}</td></tr>
+        <tr><td><strong>Source</strong></td><td>{source}</td></tr>
+        <tr><td><strong>Correlation ID</strong></td><td>{correlationId}</td></tr>
+        <tr><td><strong>Timestamp</strong></td><td>{timestamp}</td></tr>
+        </table>
+        {payloadSection}
+        <hr>
+        <p><em>This is an automated notification from the Webhook Service.</em></p>
+        </body></html>
+
+    approval:
+      subject: "{subjectPrefix} Approval {approvalStatus}: {eventId}"
+      body: |
+        <html><body>
+        <h2>Approval Status Update</h2>
+        <p>An approval workflow event has been processed.</p>
+        <h3>Approval Details</h3>
+        <table border='1' style='border-collapse: collapse; width: 100%;'>
+        <tr><td><strong>Status</strong></td><td><span style='color: {approvalStatusColor};'>{approvalStatus}</span></td></tr>
+        <tr><td><strong>Event ID</strong></td><td>{eventId}</td></tr>
+        <tr><td><strong>Event Type</strong></td><td>{eventType}</td></tr>
+        <tr><td><strong>Correlation ID</strong></td><td>{correlationId}</td></tr>
+        {commentsRow}
+        <tr><td><strong>Timestamp</strong></td><td>{timestamp}</td></tr>
+        </table>
+        <hr>
+        <p><em>This is an automated notification from the Webhook Service.</em></p>
+        </body></html>
+
+    error:
+      subject: "{subjectPrefix} ERROR: Event Processing Failed - {eventId}"
+      body: |
+        <html><body>
+        <h2 style='color: red;'>Webhook Event Processing Error</h2>
+        <p>An error occurred while processing a webhook event.</p>
+        <h3>Error Details</h3>
+        <table border='1' style='border-collapse: collapse; width: 100%;'>
+        <tr><td><strong>Event ID</strong></td><td>{eventId}</td></tr>
+        <tr><td><strong>Event Type</strong></td><td>{eventType}</td></tr>
+        <tr><td><strong>Source</strong></td><td>{source}</td></tr>
+        <tr><td><strong>Error Message</strong></td><td style='color: red;'>{errorMessage}</td></tr>
+        <tr><td><strong>Timestamp</strong></td><td>{timestamp}</td></tr>
+        </table>
+        {exceptionSection}
+        <hr>
+        <p><em>This is an automated notification from the Webhook Service.</em></p>
+        </body></html>

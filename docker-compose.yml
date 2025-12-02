@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  webhook-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: webhook-service
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      # JVM Configuration for Java 21+ compatibility
+      - JAVA_OPTS=--enable-native-access=ALL-UNNAMED -XX:MaxMetaspaceSize=512m
+      # Axway webhook configuration
+      - AXWAY_WEBHOOK_SECRET=${AXWAY_WEBHOOK_SECRET}
+      - AXWAY_WEBHOOK_TOKEN=${AXWAY_WEBHOOK_TOKEN}
+      - AXWAY_API_BASE_URL=${AXWAY_API_BASE_URL}
+      - AXWAY_API_TOKEN=${AXWAY_API_TOKEN}
+      # ServiceNow webhook configuration
+      - SERVICENOW_WEBHOOK_SECRET=${SERVICENOW_WEBHOOK_SECRET}
+      - SERVICENOW_WEBHOOK_USERNAME=${SERVICENOW_WEBHOOK_USERNAME}
+      - SERVICENOW_WEBHOOK_PASSWORD=${SERVICENOW_WEBHOOK_PASSWORD}
+      # H2 Console (for debugging - disable in production)
+      - H2_CONSOLE_ENABLED=${H2_CONSOLE_ENABLED:-false}
+    networks:
+      - webhook-network
+    restart: unless-stopped
+    volumes:
+      - ./logs:/var/log/webhook-service
+      - ./data:/app/data
+
+networks:
+  webhook-network:
+    driver: bridge

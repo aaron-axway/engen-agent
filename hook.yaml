@@ -1,0 +1,26 @@
+group: management
+apiVersion: v1alpha1
+kind: ResourceHook
+name: engen
+title: API Lifecycle Events Hook
+metadata:
+  id: 8a2e8af199113e1301991b1786b04313
+  scope:
+    id: 8a2e8af199113e1301991b178551430f
+    kind: Integration
+    name: engen
+spec:
+  triggers:
+    - kind: AssetRequest
+      name: '*'
+      type:
+        - created
+        - updated
+        - deleted
+      group: catalog
+      scope:
+        kind: Application
+        name: '*'
+  webhooks:
+    - engen-webhook
+

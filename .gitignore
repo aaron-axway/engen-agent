@@ -1,0 +1,31 @@
+# Build artifacts
+build/
+.gradle/
+*.class
+*.jar
+*.log
+bin/
+
+# Database files
+data/*.mv.db
+data/*.trace.db
+data/*.lock.db
+
+# Environment and secrets
+.env
+certs/*.pem
+private_key.pem
+public_key.pem
+
+# IDE and OS files
+.DS_Store
+.idea/
+*.iml
+.vscode/
+.serena/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~

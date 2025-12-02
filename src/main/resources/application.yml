@@ -1,0 +1,132 @@
+spring:
+  application:
+    name: webhook-service
+  
+  datasource:
+    url: ${DATABASE_URL:jdbc:h2:file:./data/webhook_db;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${DATABASE_USERNAME:sa}
+    password: ${DATABASE_PASSWORD:}
+    driver-class-name: ${DATABASE_DRIVER:org.h2.Driver}
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: ${HIBERNATE_DIALECT:org.hibernate.dialect.H2Dialect}
+        format_sql: true
+    show-sql: false
+  
+  h2:
+    console:
+      enabled: ${H2_CONSOLE_ENABLED:false}
+      path: /h2-console
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /
+
+logging:
+  level:
+    root: INFO
+    com.engen.webhookservice: DEBUG
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+
+webhook:
+  axway:
+    secret: ${AXWAY_WEBHOOK_SECRET:}
+    token: ${AXWAY_WEBHOOK_TOKEN:}
+    ignored-event-types: ${AXWAY_IGNORED_EVENT_TYPES:SubResourceUpdated}
+    api:
+      base-url: ${AXWAY_API_BASE_URL:https://api-env.demo.axway.com}
+      token: ${AXWAY_API_TOKEN:}
+    platform:
+      base-url: ${AXWAY_PLATFORM_BASE_URL:https://platform.axway.com/api/v1}
+  
+  servicenow:
+    secret: ${SERVICENOW_WEBHOOK_SECRET:}
+    username: ${SERVICENOW_WEBHOOK_USERNAME:}
+    password: ${SERVICENOW_WEBHOOK_PASSWORD:}
+
+axway:
+  oauth:
+    enabled: ${AXWAY_OAUTH_ENABLED:false}
+    client-id: ${AXWAY_OAUTH_CLIENT_ID:}
+    client-secret: ${AXWAY_OAUTH_CLIENT_SECRET:}
+    username: ${AXWAY_OAUTH_USERNAME:}
+    key-id: ${AXWAY_OAUTH_KEY_ID:}
+    private-key-path: ${AXWAY_OAUTH_PRIVATE_KEY_PATH:private_key.pem}
+    token-endpoint: ${AXWAY_OAUTH_TOKEN_ENDPOINT:}
+    token-cache-duration-minutes: ${AXWAY_OAUTH_TOKEN_CACHE_MINUTES:55}
+
+# Highmark OAuth configuration for ServiceNow Catalog API
+# Identity domain is passed as query parameter to the token endpoint
+highmark:
+  oauth:
+    enabled: ${HIGHMARK_OAUTH_ENABLED:true}
+    auth-method: ${HIGHMARK_OAUTH_AUTH_METHOD:basic}  # basic or jwt
+    token-url: ${HIGHMARK_OAUTH_TOKEN_URL:https://logintest.highmark.com/oauth2/rest/token}
+    client-id: ${HIGHMARK_OAUTH_CLIENT_ID:}
+    client-secret: ${HIGHMARK_OAUTH_CLIENT_SECRET:}
+    identity-domain: ${HIGHMARK_OAUTH_IDENTITY_DOMAIN:AmplifyMarketPlacev3}
+    scope: ${HIGHMARK_OAUTH_SCOPE:resource.READ}
+    token-cache-duration-minutes: ${HIGHMARK_OAUTH_TOKEN_CACHE_MINUTES:55}
+    # JWT-specific configuration (optional, only needed if auth-method=jwt)
+    username: ${HIGHMARK_OAUTH_USERNAME:}
+    key-id: ${HIGHMARK_OAUTH_KEY_ID:}
+    private-key-path: ${HIGHMARK_OAUTH_PRIVATE_KEY_PATH:}
+
+  catalog:
+    enabled: ${HIGHMARK_CATALOG_API_ENABLED:true}
+    base-url: ${HIGHMARK_CATALOG_BASE_URL:https://apiintdev.hmhs.com/snow/v1}
+    catalog-item-sys-id: ${HIGHMARK_CATALOG_ITEM_SYS_ID:2a10c025eb587a1ce2b7f1fbcad0cdda}
+    # Default values for catalog item variables
+    default-data-governance: ${HIGHMARK_DEFAULT_DATA_GOVERNANCE:Internal}
+    default-dg-class-tags: ${HIGHMARK_DEFAULT_DG_CLASS_TAGS:Standard}
+    default-approval-state: ${HIGHMARK_DEFAULT_APPROVAL_STATE:pending}
+    default-need-by-days: ${HIGHMARK_DEFAULT_NEED_BY_DAYS:30}
+
+# Email notification configuration
+# Templates are loaded from classpath:email-templates.yml
+# Customize email subjects and bodies by editing email-templates.yml
+email:
+  enabled: ${EMAIL_ENABLED:false}
+  smtp:
+    host: ${EMAIL_SMTP_HOST:localhost}
+    port: ${EMAIL_SMTP_PORT:1025}
+    username: ${EMAIL_SMTP_USERNAME:}
+    password: ${EMAIL_SMTP_PASSWORD:}
+    auth: ${EMAIL_SMTP_AUTH:true}
+    starttls:
+      enable: ${EMAIL_SMTP_STARTTLS:true}
+  from: ${EMAIL_FROM:noreply@engen-webhook.com}
+  to: ${EMAIL_TO:}
+  cc: ${EMAIL_CC:}
+  subjectPrefix: ${EMAIL_SUBJECT_PREFIX:[Webhook Service]}
+
+oauth:
+  startup-health-check:
+    enabled: ${OAUTH_STARTUP_HEALTH_CHECK_ENABLED:true}
+    shutdown-on-failure: ${OAUTH_STARTUP_SHUTDOWN_ON_FAILURE:true}
+    required-services: ${OAUTH_STARTUP_REQUIRED_SERVICES:axway,highmark}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+event:
+  cleanup:
+    enabled: ${EVENT_CLEANUP_ENABLED:false}
+    retention-days: ${EVENT_RETENTION_DAYS:30}
+    retention-minutes: ${EVENT_RETENTION_MINUTES:0}  # If > 0, overrides retention-days
+    batch-size: ${EVENT_CLEANUP_BATCH_SIZE:1000}
+    cron: ${EVENT_CLEANUP_CRON:0 0 2 * * ?}
+    ignored-cron: ${EVENT_CLEANUP_IGNORED_CRON:0 30 1 * * ?}

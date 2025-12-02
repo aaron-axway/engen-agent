@@ -1,0 +1,127 @@
+group: management
+apiVersion: v1alpha1
+kind: AccessRequest
+name: 8a2e901598f6ba0501991b1e5c9f0c02
+title: enGen
+metadata:
+  scope:
+    kind: Environment
+    name: aaron-agent-devlopment
+  references:
+    - id: 8a2e97a59562f27d019563c45e7f1b09
+      kind: APIServiceInstance
+      name: hello
+      scopeKind: Environment
+      scopeName: aaron-agent-devlopment
+      selfLink: >-
+        /management/v1alpha1/environments/aaron-agent-devlopment/apiserviceinstances/hello
+      type: hard
+      group: management
+    - id: 8a2e8af199113e1301991b1e5f42445b
+      kind: ManagedApplication
+      name: aaron-test
+      scopeKind: Environment
+      scopeName: aaron-agent-devlopment
+      selfLink: >-
+        /management/v1alpha1/environments/aaron-agent-devlopment/managedapplications/aaron-test
+      type: hard
+      group: management
+    - id: 8a2e81d89562f2f9019563ccdbae1bba
+      kind: Product
+      name: aaron-agent
+      selfLink: /catalog/v1/products/aaron-agent
+      type: hard
+      group: catalog
+    - id: 8a2e8cb990c1696f0190cc67464a009a
+      kind: ProductPlanUnit
+      name: transactions
+      selfLink: /catalog/v1alpha1/productplanunits/transactions
+      type: soft
+      group: catalog
+    - id: 8a2e81d89562f2f9019563cd31611beb
+      kind: ProductPlan
+      name: free-4
+      selfLink: /catalog/v1alpha1/productplans/free-4
+      type: hard
+      group: catalog
+    - id: 8a2e85119562f17d019563ccdd301dc5
+      kind: ProductRelease
+      name: aaron-agent-1.0.0
+      selfLink: /catalog/v1/productreleases/aaron-agent-1.0.0
+      type: hard
+      group: catalog
+    - id: 8a2e927399113f3501991b1dc21f2e02
+      kind: Subscription
+      name: aaron-test-2
+      selfLink: /catalog/v1alpha1/subscriptions/aaron-test-2
+      type: hard
+      group: catalog
+    - id: 8a2e81d89562f2f9019563cd7a161bfb
+      kind: PublishedProduct
+      name: nearsighted-hyena
+      scopeKind: Marketplace
+      scopeName: 2289a991-0c62-4193-8fbf-8fb2db068ade
+      selfLink: >-
+        /catalog/v1alpha1/marketplaces/2289a991-0c62-4193-8fbf-8fb2db068ade/publishedproducts/nearsighted-hyena
+      type: hard
+      group: catalog
+    - id: 8a2e95d49562f180019563cd333d19bd
+      kind: Quota
+      name: quota-0
+      scopeKind: ProductPlan
+      scopeName: free-4
+      selfLink: /catalog/v1/productplans/free-4/quotas/quota-0
+      type: hard
+      group: catalog
+    - id: 8a2e81d89562f2f9019563cc48b01b9c
+      kind: AssetResource
+      name: hello
+      scopeKind: AssetRelease
+      scopeName: aaron-agent-1.0.0
+      selfLink: /catalog/v1alpha1/assetreleases/aaron-agent-1.0.0/assetresources/hello
+      type: hard
+      group: catalog
+    - id: 8a2e8af199113e1301991b1e5da04449
+      kind: AssetRequest
+      name: 8a2e901598f6ba0501991b1e5c9f0c02
+      scopeKind: Application
+      scopeName: aaron-test
+      selfLink: >-
+        /catalog/v1alpha1/applications/aaron-test/assetrequests/8a2e901598f6ba0501991b1e5c9f0c02
+      type: hard
+      group: catalog
+    - id: 8a2e8af199113e1301991b1df78e4431
+      kind: Application
+      name: aaron-test
+      selfLink: /catalog/v1alpha1/applications/aaron-test
+      type: hard
+      group: catalog
+  selfLink: >-
+    /management/v1alpha1/environments/aaron-agent-devlopment/accessrequests/8a2e901598f6ba0501991b1e5c9f0c02
+spec:
+  data: {}
+  quota:
+    limit: 1
+    interval: monthly
+  apiServiceInstance: hello
+  managedApplication: aaron-test
+references:
+  - kind: Application
+    name: catalog/aaron-test
+  - kind: AssetRequest
+    name: catalog/aaron-test/8a2e901598f6ba0501991b1e5c9f0c02
+  - kind: AssetResource
+    name: catalog/aaron-agent-1.0.0/hello
+  - kind: Subscription
+    name: catalog/aaron-test-2
+  - kind: Product
+    name: catalog/aaron-agent
+  - kind: ProductPlan
+    name: catalog/free-4
+  - kind: PublishedProduct
+    name: catalog/2289a991-0c62-4193-8fbf-8fb2db068ade/nearsighted-hyena
+  - kind: Quota
+    name: catalog/free-4/quota-0
+    unit: transactions
+  - kind: ProductRelease
+    name: catalog/aaron-agent-1.0.0
