@@ -24,19 +24,15 @@ spring:
     console:
       enabled: false
 
+# Kubernetes-friendly logging: console only (no file logging)
+# K8s collects stdout/stderr logs automatically
 logging:
   level:
     root: WARN
-    com.example.webhookservice: INFO
+    com.engen.webhookservice: INFO
     org.springframework.security: INFO
-  file:
-    name: /var/log/webhook-service/application.log
   pattern:
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-
-servicenow:
-  api:
-    table-name: ${SERVICENOW_TABLE_NAME:amplify_access_request}
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 event:
   cleanup:

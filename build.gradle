@@ -49,18 +49,17 @@ dependencies {
     testImplementation 'org.springframework.security:spring-security-test'
 }
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
-// Custom task to build JAR with layer extraction capability
-jar {
+// Disable plain JAR, only produce bootJar
+tasks.named('jar') {
     enabled = false
-    archiveClassifier = ''
 }
 
 // Configure bootRun task with JVM arguments for Java 24+ compatibility
-bootRun {
+tasks.named('bootRun') {
     jvmArgs = [
         '--enable-native-access=ALL-UNNAMED',
         '-XX:+UnlockExperimentalVMOptions'
@@ -68,9 +67,7 @@ bootRun {
 }
 
 // Enable Spring Boot's layered JAR feature
-bootJar {
-    enabled = true
-    archiveClassifier = ''
+tasks.named('bootJar') {
     layered {
         enabled = true
     }

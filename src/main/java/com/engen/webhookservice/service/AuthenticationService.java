@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 @Service
 public class AuthenticationService {
@@ -56,8 +57,10 @@ public class AuthenticationService {
                 
                 String calculatedSignature = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, axwaySecret)
                     .hmacHex(body);
-                
-                if (calculatedSignature.equals(signature)) {
+
+                // Use timing-safe comparison to prevent timing attacks
+                if (MessageDigest.isEqual(calculatedSignature.getBytes(StandardCharsets.UTF_8),
+                                          signature.getBytes(StandardCharsets.UTF_8))) {
                     log.debug("Axway webhook authenticated via HMAC signature");
                     return true;
                 }
@@ -95,8 +98,10 @@ public class AuthenticationService {
                 
                 String calculatedSignature = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, serviceNowSecret)
                     .hmacHex(body);
-                
-                if (calculatedSignature.equals(signature)) {
+
+                // Use timing-safe comparison to prevent timing attacks
+                if (MessageDigest.isEqual(calculatedSignature.getBytes(StandardCharsets.UTF_8),
+                                          signature.getBytes(StandardCharsets.UTF_8))) {
                     log.debug("ServiceNow webhook authenticated via HMAC signature");
                     return true;
                 }

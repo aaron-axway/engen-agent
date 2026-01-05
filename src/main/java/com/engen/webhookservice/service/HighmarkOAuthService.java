@@ -187,10 +187,9 @@ public class HighmarkOAuthService {
 
                 if (accessToken != null) {
                     log.info("Successfully obtained Highmark access token via Basic Auth");
-                    log.debug("Token response: {}", responseBody);
                     return accessToken;
                 } else {
-                    log.error("No access_token in Highmark OAuth response: {}", responseBody);
+                    log.error("No access_token in Highmark OAuth response (response keys: {})", responseBody.keySet());
                 }
             } else {
                 log.error("Highmark OAuth token request failed with status: {}",
@@ -348,7 +347,7 @@ public class HighmarkOAuthService {
                     log.info("Successfully exchanged JWT for Highmark access token");
                     return accessToken;
                 } else {
-                    log.error("No access_token in Highmark OAuth response: {}", responseBody);
+                    log.error("No access_token in Highmark OAuth response (response keys: {})", responseBody.keySet());
                 }
             } else {
                 log.error("Highmark OAuth token exchange failed with status: {}",

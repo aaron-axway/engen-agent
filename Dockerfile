@@ -41,10 +41,6 @@ RUN adduser \
     --uid "${UID}" \
     appuser
 
-# Create log directory
-RUN mkdir -p /var/log/webhook-service && \
-    chown appuser:appuser /var/log/webhook-service
-
 WORKDIR /app
 
 # Copy application layers from extract stage

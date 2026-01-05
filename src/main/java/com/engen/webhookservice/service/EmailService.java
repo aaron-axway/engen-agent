@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -70,8 +71,12 @@ public class EmailService {
             sendEmail(content.getSubject(), content.getBody());
             log.info("ServiceNow ticket notification sent for event: {}", event.getEventId());
 
+        } catch (MailException e) {
+            // Mail connection error - already logged in sendEmail, don't log stack trace again
+            log.warn("ServiceNow ticket notification email not sent for event: {} (mail server unavailable)", event.getEventId());
         } catch (Exception e) {
-            log.error("Failed to send ServiceNow ticket notification email for event: {}", event.getEventId(), e);
+            log.error("Failed to send ServiceNow ticket notification email for event: {} - {}",
+                event.getEventId(), getRootCauseMessage(e));
         }
     }
 
@@ -101,8 +106,12 @@ public class EmailService {
             sendEmail(content.getSubject(), content.getBody());
             log.info("Approval notification sent for event: {}", event.getEventId());
 
+        } catch (MailException e) {
+            // Mail connection error - already logged in sendEmail, don't log stack trace again
+            log.warn("Approval notification email not sent for event: {} (mail server unavailable)", event.getEventId());
         } catch (Exception e) {
-            log.error("Failed to send approval notification email for event: {}", event.getEventId(), e);
+            log.error("Failed to send approval notification email for event: {} - {}",
+                event.getEventId(), getRootCauseMessage(e));
         }
     }
 
@@ -131,8 +140,12 @@ public class EmailService {
             sendEmail(content.getSubject(), content.getBody());
             log.info("Error notification sent for event: {}", event.getEventId());
 
+        } catch (MailException e) {
+            // Mail connection error - already logged in sendEmail, don't log stack trace again
+            log.warn("Error notification email not sent for event: {} (mail server unavailable)", event.getEventId());
         } catch (Exception e) {
-            log.error("Failed to send error notification email for event: {}", event.getEventId(), e);
+            log.error("Failed to send error notification email for event: {} - {}",
+                event.getEventId(), getRootCauseMessage(e));
         }
     }
 
@@ -153,8 +166,26 @@ public class EmailService {
         helper.setSubject(subject);
         helper.setText(body, true); // true = HTML content
 
-        mailSender.send(message);
-        log.info("Email sent successfully to: {}", String.join(", ", toEmails));
+        try {
+            mailSender.send(message);
+            log.info("Email sent successfully to: {}", String.join(", ", toEmails));
+        } catch (MailException e) {
+            // Log just the root cause message, not full stack trace
+            String rootCause = getRootCauseMessage(e);
+            log.error("Failed to send email - mail server not reachable: {}", rootCause);
+            throw e;
+        }
+    }
+
+    /**
+     * Extract the root cause message from an exception chain
+     */
+    private String getRootCauseMessage(Throwable throwable) {
+        Throwable rootCause = throwable;
+        while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+            rootCause = rootCause.getCause();
+        }
+        return rootCause.getClass().getSimpleName() + ": " + rootCause.getMessage();
     }
 
     /**

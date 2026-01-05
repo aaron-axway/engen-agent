@@ -32,6 +32,16 @@ public class EventProcessingService {
     @Autowired(required = false)
     private EmailService emailService;
 
+    // Headers that should not be stored in the database for security reasons
+    private static final List<String> SENSITIVE_HEADERS = List.of(
+        "authorization",
+        "x-api-key",
+        "x-axway-signature",
+        "x-servicenow-signature",
+        "cookie",
+        "set-cookie"
+    );
+
     public EventProcessingService(EventRecordRepository eventRecordRepository,
                                   AxwayApiService axwayApiService,
                                   HighmarkCatalogApiService highmarkCatalogApiService) {
@@ -116,13 +126,31 @@ public class EventProcessingService {
         eventRecordRepository.save(record);
     }
 
+    /**
+     * Filters out sensitive headers (authorization, signatures, cookies) before storage.
+     * This prevents credentials and secrets from being persisted in the database.
+     */
+    private Map<String, String> filterSensitiveHeaders(Map<String, String> headers) {
+        if (headers == null) {
+            return null;
+        }
+        Map<String, String> filtered = new HashMap<>();
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            String headerName = entry.getKey().toLowerCase();
+            if (!SENSITIVE_HEADERS.contains(headerName)) {
+                filtered.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return filtered;
+    }
+
     private EventRecord saveEventRecord(WebhookEvent event, String source, Map<String, String> headers) {
         EventRecord record = new EventRecord();
         record.setEventId(event.getEventId());
         record.setEventType(event.getEventType());
         record.setSource(source);
         record.setPayload(event.getPayload());
-        record.setHeaders(headers);
+        record.setHeaders(filterSensitiveHeaders(headers));  // Filter sensitive headers before storing
         record.setReceivedAt(Instant.now());
         record.setStatus("RECEIVED");
         record.setCorrelationId(event.getCorrelationId());
@@ -154,12 +182,12 @@ public class EventProcessingService {
                             List<String> roles = (List<String>) ((Map<String, Object>) u).get("roles");
                             for (String role : roles) {
                                 if (role.equals("api_access")) {
-                                    System.out.println("API Access Manager found");
+                                    log.debug("API Access Manager found in team");
                                     @SuppressWarnings("unchecked")
                                     Map<String, Object> user = (Map<String, Object>) u;
                                     String guid = (String) user.get("guid");
                                     Map<String, Object> ud = axwayApiService.getUser(guid);
-                                    System.out.println(ud.get("email"));
+                                    log.debug("Found user with email: {}", ud.get("email"));
                                     emails.add(ud.get("email").toString());
                                 }
                             }

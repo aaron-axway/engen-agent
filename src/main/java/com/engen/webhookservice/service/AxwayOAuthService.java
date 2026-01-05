@@ -321,7 +321,7 @@ public class AxwayOAuthService {
                     log.info("Successfully exchanged JWT for Axway access token");
                     return accessToken;
                 } else {
-                    log.error("No access_token in Axway OAuth response: {}", responseBody);
+                    log.error("No access_token in Axway OAuth response (response keys: {})", responseBody.keySet());
                 }
             } else {
                 log.error("Axway OAuth token exchange failed with status: {}", 

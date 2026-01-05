@@ -26,6 +26,10 @@ public class SecurityConfig {
             .requestCache(cache -> cache.disable())  // Disable request caching for webhooks
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin())  // Allow H2 console frames from same origin
+                .contentTypeOptions(contentType -> {})      // X-Content-Type-Options: nosniff
+                .httpStrictTransportSecurity(hsts -> hsts   // HSTS - browsers will enforce HTTPS
+                    .includeSubDomains(true)
+                    .maxAgeInSeconds(31536000))             // 1 year
             )
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/actuator/health", "/webhooks/health").permitAll()

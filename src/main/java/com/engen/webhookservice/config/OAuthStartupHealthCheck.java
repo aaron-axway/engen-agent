@@ -15,8 +15,11 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Startup health check that validates OAuth connections
- * Shuts down the application if critical OAuth services fail
+ * Startup health check that validates OAuth connections.
+ *
+ * For Kubernetes deployments, shutdown-on-failure defaults to false so that
+ * the readiness probe can handle marking the pod as not ready instead of
+ * causing pod restart loops.
  */
 @Component
 public class OAuthStartupHealthCheck implements ApplicationRunner {
@@ -30,7 +33,7 @@ public class OAuthStartupHealthCheck implements ApplicationRunner {
     @Value("${oauth.startup-health-check.enabled:true}")
     private boolean healthCheckEnabled;
 
-    @Value("${oauth.startup-health-check.shutdown-on-failure:true}")
+    @Value("${oauth.startup-health-check.shutdown-on-failure:false}")
     private boolean shutdownOnFailure;
 
     @Value("${oauth.startup-health-check.required-services:axway,highmark}")

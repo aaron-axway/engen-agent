@@ -22,18 +22,24 @@ spring:
       enabled: ${H2_CONSOLE_ENABLED:false}
       path: /h2-console
 
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
 server:
   port: ${SERVER_PORT:8080}
   servlet:
     context-path: /
+  shutdown: graceful
 
+# Logging: Console only (no file logging) - suitable for containers/Kubernetes
+# Logs go to stdout where they can be collected by container orchestration
 logging:
   level:
     root: INFO
     com.engen.webhookservice: DEBUG
     org.springframework.security: DEBUG
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 webhook:
   axway:
@@ -55,9 +61,6 @@ axway:
   oauth:
     enabled: ${AXWAY_OAUTH_ENABLED:false}
     client-id: ${AXWAY_OAUTH_CLIENT_ID:}
-    client-secret: ${AXWAY_OAUTH_CLIENT_SECRET:}
-    username: ${AXWAY_OAUTH_USERNAME:}
-    key-id: ${AXWAY_OAUTH_KEY_ID:}
     # Keys can be provided as file paths OR base64-encoded env vars (base64 takes precedence)
     private-key-path: ${AXWAY_OAUTH_PRIVATE_KEY_PATH:private_key.pem}
     public-key-path: ${AXWAY_OAUTH_PUBLIC_KEY_PATH:public_key.pem}
@@ -114,7 +117,8 @@ email:
 oauth:
   startup-health-check:
     enabled: ${OAUTH_STARTUP_HEALTH_CHECK_ENABLED:true}
-    shutdown-on-failure: ${OAUTH_STARTUP_SHUTDOWN_ON_FAILURE:true}
+    # Default to false for Kubernetes - let readiness probe handle failures instead of hard shutdown
+    shutdown-on-failure: ${OAUTH_STARTUP_SHUTDOWN_ON_FAILURE:false}
     required-services: ${OAUTH_STARTUP_REQUIRED_SERVICES:axway,highmark}
 
 management:
@@ -125,6 +129,16 @@ management:
   endpoint:
     health:
       show-details: always
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+        liveness:
+          include: livenessState
+  health:
+    mail:
+      enabled: false  # Disable default mail health check - we use custom one
 
 event:
   cleanup:
