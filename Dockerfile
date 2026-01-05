@@ -1,14 +1,14 @@
 # syntax=docker/dockerfile:1
 
-# Build stage - using Java 24 to match local environment
+# Build stage - using Java 21 for compatibility
 FROM eclipse-temurin:21-jdk-jammy AS builder
-WORKDIR /build
+WORKDIR /workspace
 
 # Copy Gradle wrapper and build files
 COPY gradlew gradlew
 COPY gradle/ gradle/
-COPY build.gradle.kts .
-COPY settings.gradle.kts .
+COPY build.gradle .
+COPY settings.gradle .
 
 # Download dependencies
 RUN --mount=type=cache,target=/root/.gradle \
@@ -20,12 +20,12 @@ COPY src src/
 # Build the application
 RUN --mount=type=cache,target=/root/.gradle \
     ./gradlew bootJar --no-daemon && \
-    mv build/libs/webhook-service-*.jar build/libs/app.jar
+    mv build/libs/webhook-service-*.jar /workspace/app.jar
 
 # Extract layers for better caching
 FROM builder AS extract
-WORKDIR /build
-RUN java -Djarmode=layertools -jar build/libs/app.jar extract --destination build/extracted
+WORKDIR /workspace
+RUN java -Djarmode=layertools -jar app.jar extract --destination extracted
 
 # Final runtime stage
 FROM eclipse-temurin:21-jre-jammy AS final
@@ -48,10 +48,10 @@ RUN mkdir -p /var/log/webhook-service && \
 WORKDIR /app
 
 # Copy application layers from extract stage
-COPY --from=extract --chown=appuser:appuser /build/build/extracted/dependencies/ ./
-COPY --from=extract --chown=appuser:appuser /build/build/extracted/spring-boot-loader/ ./
-COPY --from=extract --chown=appuser:appuser /build/build/extracted/snapshot-dependencies/ ./
-COPY --from=extract --chown=appuser:appuser /build/build/extracted/application/ ./
+COPY --from=extract --chown=appuser:appuser /workspace/extracted/dependencies/ ./
+COPY --from=extract --chown=appuser:appuser /workspace/extracted/spring-boot-loader/ ./
+COPY --from=extract --chown=appuser:appuser /workspace/extracted/snapshot-dependencies/ ./
+COPY --from=extract --chown=appuser:appuser /workspace/extracted/application/ ./
 
 # Switch to non-root user
 USER appuser

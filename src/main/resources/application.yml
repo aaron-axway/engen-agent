@@ -58,7 +58,11 @@ axway:
     client-secret: ${AXWAY_OAUTH_CLIENT_SECRET:}
     username: ${AXWAY_OAUTH_USERNAME:}
     key-id: ${AXWAY_OAUTH_KEY_ID:}
+    # Keys can be provided as file paths OR base64-encoded env vars (base64 takes precedence)
     private-key-path: ${AXWAY_OAUTH_PRIVATE_KEY_PATH:private_key.pem}
+    public-key-path: ${AXWAY_OAUTH_PUBLIC_KEY_PATH:public_key.pem}
+    private-key-base64: ${AXWAY_OAUTH_PRIVATE_KEY_BASE64:}
+    public-key-base64: ${AXWAY_OAUTH_PUBLIC_KEY_BASE64:}
     token-endpoint: ${AXWAY_OAUTH_TOKEN_ENDPOINT:}
     token-cache-duration-minutes: ${AXWAY_OAUTH_TOKEN_CACHE_MINUTES:55}
 

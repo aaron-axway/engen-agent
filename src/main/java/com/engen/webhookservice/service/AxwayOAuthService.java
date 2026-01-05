@@ -44,9 +44,16 @@ public class AxwayOAuthService {
 
     @Value("${axway.oauth.private-key-path:private_key.pem}")
     private String privateKeyPath;
-    
+
     @Value("${axway.oauth.public-key-path:public_key.pem}")
     private String publicKeyPath;
+
+    // Base64-encoded keys from environment variables (takes precedence over file paths)
+    @Value("${axway.oauth.private-key-base64:}")
+    private String privateKeyBase64;
+
+    @Value("${axway.oauth.public-key-base64:}")
+    private String publicKeyBase64;
 
     @Value("${axway.oauth.token-endpoint:}")
     private String tokenEndpoint;
@@ -125,13 +132,8 @@ public class AxwayOAuthService {
      */
     private String createJwtAssertion() {
         try {
-            if (privateKeyPath == null || privateKeyPath.isEmpty()) {
-                log.error("Axway OAuth private key path not configured");
-                return null;
-            }
-
-            // Parse RSA private key from file
-            PrivateKey privateKey = parseRSAPrivateKeyFromFile(privateKeyPath);
+            // Parse RSA private key (from base64 env var or file)
+            PrivateKey privateKey = parseRSAPrivateKey();
             if (privateKey == null) {
                 log.error("Failed to parse Axway OAuth private key");
                 return null;
@@ -173,24 +175,38 @@ public class AxwayOAuthService {
     /**
      * Computes KID from public key by taking SHA-256 hash of DER-encoded public key
      * This matches Axway's requirement for KID computation
+     * Checks base64 env var first, falls back to file path
      * @return Base64 URL-encoded KID or null if failed
      */
     private String computeKidFromPublicKey() {
         try {
-            // Read public key file
             String keyContent;
-            try {
-                keyContent = new String(Files.readAllBytes(Paths.get(publicKeyPath)));
-            } catch (IOException e) {
-                // If not found in file system, try classpath
-                Resource resource = new ClassPathResource(publicKeyPath);
-                keyContent = new String(resource.getInputStream().readAllBytes());
+
+            // Check if base64-encoded key is provided via env var (takes precedence)
+            if (publicKeyBase64 != null && !publicKeyBase64.isEmpty()) {
+                log.debug("Loading Axway public key from base64 environment variable");
+                keyContent = publicKeyBase64;
+            } else if (publicKeyPath != null && !publicKeyPath.isEmpty()) {
+                // Fall back to file path
+                log.debug("Loading Axway public key from file: {}", publicKeyPath);
+                try {
+                    keyContent = new String(Files.readAllBytes(Paths.get(publicKeyPath)));
+                } catch (IOException e) {
+                    // If not found in file system, try classpath
+                    Resource resource = new ClassPathResource(publicKeyPath);
+                    keyContent = new String(resource.getInputStream().readAllBytes());
+                }
+            } else {
+                log.error("Axway OAuth public key not configured (neither base64 nor file path)");
+                return null;
             }
 
-            // Remove PEM headers and footers, and whitespace
+            // Remove PEM headers and footers, and whitespace (handles both PEM and raw base64)
             keyContent = keyContent
                 .replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("-----END PUBLIC KEY-----", "")
+                .replace("-----BEGIN RSA PUBLIC KEY-----", "")
+                .replace("-----END RSA PUBLIC KEY-----", "")
                 .replaceAll("\\s", "");
 
             // Decode the public key
@@ -198,19 +214,19 @@ public class AxwayOAuthService {
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             PublicKey publicKey = keyFactory.generatePublic(keySpec);
-            
+
             // Get DER encoding of the public key
             byte[] derEncoded = publicKey.getEncoded();
-            
+
             // Compute SHA-256 hash
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(derEncoded);
-            
+
             // Return base64 URL-encoded hash (no padding)
             String kid = Base64.getUrlEncoder().withoutPadding().encodeToString(hash);
             log.debug("Computed KID from public key: {}", kid);
             return kid;
-            
+
         } catch (Exception e) {
             log.error("Error computing KID from public key", e);
             return null;
@@ -218,26 +234,39 @@ public class AxwayOAuthService {
     }
     
     /**
-     * Parses RSA private key from PEM file
-     * @param keyPath Path to the private key file
+     * Parses RSA private key from base64 env var or PEM file
+     * Checks base64 env var first, falls back to file path
      * @return PrivateKey or null if failed
      */
-    private PrivateKey parseRSAPrivateKeyFromFile(String keyPath) {
+    private PrivateKey parseRSAPrivateKey() {
         try {
-            // Try to read from file system first
             String keyContent;
-            try {
-                keyContent = new String(Files.readAllBytes(Paths.get(keyPath)));
-            } catch (IOException e) {
-                // If not found in file system, try classpath
-                Resource resource = new ClassPathResource(keyPath);
-                keyContent = new String(resource.getInputStream().readAllBytes());
+
+            // Check if base64-encoded key is provided via env var (takes precedence)
+            if (privateKeyBase64 != null && !privateKeyBase64.isEmpty()) {
+                log.debug("Loading Axway private key from base64 environment variable");
+                keyContent = privateKeyBase64;
+            } else if (privateKeyPath != null && !privateKeyPath.isEmpty()) {
+                // Fall back to file path
+                log.debug("Loading Axway private key from file: {}", privateKeyPath);
+                try {
+                    keyContent = new String(Files.readAllBytes(Paths.get(privateKeyPath)));
+                } catch (IOException e) {
+                    // If not found in file system, try classpath
+                    Resource resource = new ClassPathResource(privateKeyPath);
+                    keyContent = new String(resource.getInputStream().readAllBytes());
+                }
+            } else {
+                log.error("Axway OAuth private key not configured (neither base64 nor file path)");
+                return null;
             }
 
-            // Remove PEM headers and footers, and whitespace
+            // Remove PEM headers and footers, and whitespace (handles both PEM and raw base64)
             keyContent = keyContent
                 .replace("-----BEGIN PRIVATE KEY-----", "")
                 .replace("-----END PRIVATE KEY-----", "")
+                .replace("-----BEGIN RSA PRIVATE KEY-----", "")
+                .replace("-----END RSA PRIVATE KEY-----", "")
                 .replaceAll("\\s", "");
 
             byte[] keyBytes = Base64.getDecoder().decode(keyContent);
@@ -245,7 +274,7 @@ public class AxwayOAuthService {
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             return keyFactory.generatePrivate(keySpec);
         } catch (Exception e) {
-            log.error("Error parsing RSA private key from file: {}", keyPath, e);
+            log.error("Error parsing RSA private key", e);
             return null;
         }
     }
@@ -310,13 +339,19 @@ public class AxwayOAuthService {
 
     /**
      * Checks if OAuth is properly configured and enabled
+     * Accepts either base64 env var or file path for keys
      * @return true if OAuth is enabled and configured
      */
     public boolean isOAuthEnabled() {
-        return oauthEnabled && 
+        boolean hasPrivateKey = (privateKeyBase64 != null && !privateKeyBase64.isEmpty()) ||
+                                (privateKeyPath != null && !privateKeyPath.isEmpty());
+        boolean hasPublicKey = (publicKeyBase64 != null && !publicKeyBase64.isEmpty()) ||
+                               (publicKeyPath != null && !publicKeyPath.isEmpty());
+
+        return oauthEnabled &&
             clientId != null && !clientId.isEmpty() &&
-            privateKeyPath != null && !privateKeyPath.isEmpty() &&
-            publicKeyPath != null && !publicKeyPath.isEmpty() &&
+            hasPrivateKey &&
+            hasPublicKey &&
             tokenEndpoint != null && !tokenEndpoint.isEmpty();
     }
 
