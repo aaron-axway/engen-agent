@@ -65,8 +65,6 @@ public class AxwayWebhookEvent {
         event.setCorrelationId(this.correlationId);
         event.setSource("axway");
 
-
-        
         // Parse time string to Instant if needed
         if (this.time != null) {
             try {
@@ -77,20 +75,33 @@ public class AxwayWebhookEvent {
             }
         }
 
-        // Map event resource kind
-        String kind = this.payload.get("kind").toString();
+        // Map event resource kind (with null safety)
+        Object kindObj = this.payload.get("kind");
+        String kind = kindObj != null ? kindObj.toString() : "Unknown";
         event.setKind(kind);
 
-        // Map event resource selfLink
+        // Get metadata from payload
         @SuppressWarnings("unchecked")
         Map<String, Object> metadata = (Map<String, Object>) this.payload.get("metadata");
-        String selfLink = metadata != null ? String.valueOf(metadata.get("selfLink")) : null;
+
+        // Map selfLink - check metadata first, then payload root
+        String selfLink = null;
+        if (metadata != null && metadata.get("selfLink") != null) {
+            selfLink = metadata.get("selfLink").toString();
+        } else if (this.payload.get("selfLink") != null) {
+            selfLink = this.payload.get("selfLink").toString();
+        }
         event.setSelfLink(selfLink);
 
-        // Map event resource references
+        // Map references - check metadata first, then payload root
         @SuppressWarnings("unchecked")
-        List<Map<String, Object>> references = metadata != null ? (List<Map<String, Object>>) metadata.get("references") : null;
-        event.setReferences(references);
+        List<Map<String, Object>> references = null;
+        if (metadata != null && metadata.get("references") != null) {
+            references = (List<Map<String, Object>>) metadata.get("references");
+        } else if (this.payload.get("references") != null) {
+            references = (List<Map<String, Object>>) this.payload.get("references");
+        }
+        event.setReferences(references != null ? references : new java.util.ArrayList<>());
 
         // Include organization info in payload
         Map<String, Object> enrichedPayload = new HashMap<>(this.payload);
@@ -99,10 +110,10 @@ public class AxwayWebhookEvent {
         }
         enrichedPayload.put("version", this.version);
         enrichedPayload.put("product", this.product);
-        
+
         event.setPayload(enrichedPayload);
         event.setAdditionalProperties(this.additionalProperties);
-        
+
         return event;
     }
 
