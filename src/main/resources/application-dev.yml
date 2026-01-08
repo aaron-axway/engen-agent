@@ -49,7 +49,7 @@ server:
 logging:
   level:
     root: INFO
-    com.engen.webhookservice: INFO
+    com.engen.webhookservice: DEBUG
     org.springframework.security: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"

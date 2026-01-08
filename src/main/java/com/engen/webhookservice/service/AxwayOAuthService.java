@@ -175,34 +175,57 @@ public class AxwayOAuthService {
     /**
      * Computes KID from public key by taking SHA-256 hash of DER-encoded public key
      * This matches Axway's requirement for KID computation
+     * Supports both X.509 (BEGIN PUBLIC KEY) and PKCS#1 (BEGIN RSA PUBLIC KEY) formats
      * Checks base64 env var first, falls back to file path
      * @return Base64 URL-encoded KID or null if failed
      */
     private String computeKidFromPublicKey() {
         try {
-            String keyContent;
+            String rawKeyContent;
 
             // Check if base64-encoded key is provided via env var (takes precedence)
             if (publicKeyBase64 != null && !publicKeyBase64.isEmpty()) {
-                log.debug("Loading Axway public key from base64 environment variable");
-                keyContent = publicKeyBase64;
+                log.debug("Loading Axway public key from environment variable");
+                // Check if it's already PEM format (starts with -----BEGIN) or base64-encoded
+                if (publicKeyBase64.trim().startsWith("-----BEGIN")) {
+                    // Raw PEM content
+                    log.debug("Detected raw PEM format in environment variable");
+                    rawKeyContent = publicKeyBase64;
+                } else {
+                    // Base64-encoded PEM - decode it
+                    try {
+                        String cleanBase64 = publicKeyBase64.replaceAll("\\s", "");
+                        rawKeyContent = new String(Base64.getMimeDecoder().decode(cleanBase64));
+                        log.debug("Decoded base64 to PEM format");
+                    } catch (IllegalArgumentException e) {
+                        log.error("Failed to decode base64 public key. Ensure key is either raw PEM or properly base64-encoded PEM. Error: {}", e.getMessage());
+                        log.debug("First 50 chars of key: {}", publicKeyBase64.substring(0, Math.min(50, publicKeyBase64.length())));
+                        return null;
+                    }
+                }
             } else if (publicKeyPath != null && !publicKeyPath.isEmpty()) {
                 // Fall back to file path
                 log.debug("Loading Axway public key from file: {}", publicKeyPath);
                 try {
-                    keyContent = new String(Files.readAllBytes(Paths.get(publicKeyPath)));
+                    rawKeyContent = new String(Files.readAllBytes(Paths.get(publicKeyPath)));
                 } catch (IOException e) {
                     // If not found in file system, try classpath
                     Resource resource = new ClassPathResource(publicKeyPath);
-                    keyContent = new String(resource.getInputStream().readAllBytes());
+                    rawKeyContent = new String(resource.getInputStream().readAllBytes());
                 }
             } else {
                 log.error("Axway OAuth public key not configured (neither base64 nor file path)");
                 return null;
             }
 
-            // Remove PEM headers and footers, and whitespace (handles both PEM and raw base64)
-            keyContent = keyContent
+            // Detect key format
+            boolean isPkcs1 = rawKeyContent.contains("BEGIN RSA PUBLIC KEY");
+            boolean isX509 = rawKeyContent.contains("BEGIN PUBLIC KEY");
+
+            log.debug("Public key format detected - PKCS#1: {}, X.509: {}", isPkcs1, isX509);
+
+            // Remove PEM headers and footers, and whitespace
+            String keyContent = rawKeyContent
                 .replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("-----END PUBLIC KEY-----", "")
                 .replace("-----BEGIN RSA PUBLIC KEY-----", "")
@@ -211,9 +234,18 @@ public class AxwayOAuthService {
 
             // Decode the public key
             byte[] keyBytes = Base64.getDecoder().decode(keyContent);
-            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PublicKey publicKey = keyFactory.generatePublic(keySpec);
+            PublicKey publicKey;
+
+            if (isPkcs1 && !isX509) {
+                // PKCS#1 format - need to wrap in X.509 structure
+                log.debug("Converting PKCS#1 (RSA PUBLIC KEY) to X.509 format");
+                publicKey = parsePkcs1PublicKey(keyBytes, keyFactory);
+            } else {
+                // X.509 format - use directly
+                X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
+                publicKey = keyFactory.generatePublic(keySpec);
+            }
 
             // Get DER encoding of the public key
             byte[] derEncoded = publicKey.getEncoded();
@@ -232,37 +264,113 @@ public class AxwayOAuthService {
             return null;
         }
     }
+
+    /**
+     * Parses a PKCS#1 formatted RSA public key by wrapping it in X.509 structure
+     */
+    private PublicKey parsePkcs1PublicKey(byte[] pkcs1Bytes, KeyFactory keyFactory) throws Exception {
+        // X.509 SubjectPublicKeyInfo header for RSA
+        int pkcs1Length = pkcs1Bytes.length;
+
+        byte[] x509Header;
+        if (pkcs1Length > 0x7F) {
+            if (pkcs1Length > 0xFF) {
+                // 3-byte length encoding for PKCS#1 content
+                int totalLen = pkcs1Length + 22;
+                x509Header = new byte[] {
+                    0x30, (byte) 0x82, (byte) ((totalLen >> 8) & 0xFF), (byte) (totalLen & 0xFF),
+                    0x30, 0x0D,       // AlgorithmIdentifier SEQUENCE
+                    0x06, 0x09, 0x2A, (byte) 0x86, 0x48, (byte) 0x86, (byte) 0xF7, 0x0D, 0x01, 0x01, 0x01, // RSA OID
+                    0x05, 0x00,       // NULL
+                    0x03, (byte) 0x82, (byte) (((pkcs1Length + 1) >> 8) & 0xFF), (byte) ((pkcs1Length + 1) & 0xFF),
+                    0x00              // Leading zero for BIT STRING
+                };
+            } else {
+                // 2-byte length encoding
+                int totalLen = pkcs1Length + 20;
+                x509Header = new byte[] {
+                    0x30, (byte) 0x81, (byte) (totalLen & 0xFF),
+                    0x30, 0x0D,       // AlgorithmIdentifier SEQUENCE
+                    0x06, 0x09, 0x2A, (byte) 0x86, 0x48, (byte) 0x86, (byte) 0xF7, 0x0D, 0x01, 0x01, 0x01, // RSA OID
+                    0x05, 0x00,       // NULL
+                    0x03, (byte) 0x81, (byte) ((pkcs1Length + 1) & 0xFF),
+                    0x00              // Leading zero for BIT STRING
+                };
+            }
+        } else {
+            // 1-byte length encoding
+            int totalLen = pkcs1Length + 19;
+            x509Header = new byte[] {
+                0x30, (byte) (totalLen & 0x7F),
+                0x30, 0x0D,       // AlgorithmIdentifier SEQUENCE
+                0x06, 0x09, 0x2A, (byte) 0x86, 0x48, (byte) 0x86, (byte) 0xF7, 0x0D, 0x01, 0x01, 0x01, // RSA OID
+                0x05, 0x00,       // NULL
+                0x03, (byte) ((pkcs1Length + 1) & 0x7F),
+                0x00              // Leading zero for BIT STRING
+            };
+        }
+
+        // Combine header and PKCS#1 key
+        byte[] x509Bytes = new byte[x509Header.length + pkcs1Length];
+        System.arraycopy(x509Header, 0, x509Bytes, 0, x509Header.length);
+        System.arraycopy(pkcs1Bytes, 0, x509Bytes, x509Header.length, pkcs1Length);
+
+        X509EncodedKeySpec keySpec = new X509EncodedKeySpec(x509Bytes);
+        return keyFactory.generatePublic(keySpec);
+    }
     
     /**
      * Parses RSA private key from base64 env var or PEM file
+     * Supports both PKCS#8 (BEGIN PRIVATE KEY) and PKCS#1 (BEGIN RSA PRIVATE KEY) formats
      * Checks base64 env var first, falls back to file path
      * @return PrivateKey or null if failed
      */
     private PrivateKey parseRSAPrivateKey() {
         try {
-            String keyContent;
+            String rawKeyContent;
 
             // Check if base64-encoded key is provided via env var (takes precedence)
             if (privateKeyBase64 != null && !privateKeyBase64.isEmpty()) {
-                log.debug("Loading Axway private key from base64 environment variable");
-                keyContent = privateKeyBase64;
+                log.debug("Loading Axway private key from environment variable");
+                // Check if it's already PEM format (starts with -----BEGIN) or base64-encoded
+                if (privateKeyBase64.trim().startsWith("-----BEGIN")) {
+                    // Raw PEM content
+                    log.debug("Detected raw PEM format in environment variable");
+                    rawKeyContent = privateKeyBase64;
+                } else {
+                    // Base64-encoded PEM - decode it
+                    try {
+                        String cleanBase64 = privateKeyBase64.replaceAll("\\s", "");
+                        rawKeyContent = new String(Base64.getMimeDecoder().decode(cleanBase64));
+                        log.debug("Decoded base64 to PEM format");
+                    } catch (IllegalArgumentException e) {
+                        log.error("Failed to decode base64 private key. Ensure key is either raw PEM or properly base64-encoded PEM. Error: {}", e.getMessage());
+                        return null;
+                    }
+                }
             } else if (privateKeyPath != null && !privateKeyPath.isEmpty()) {
                 // Fall back to file path
                 log.debug("Loading Axway private key from file: {}", privateKeyPath);
                 try {
-                    keyContent = new String(Files.readAllBytes(Paths.get(privateKeyPath)));
+                    rawKeyContent = new String(Files.readAllBytes(Paths.get(privateKeyPath)));
                 } catch (IOException e) {
                     // If not found in file system, try classpath
                     Resource resource = new ClassPathResource(privateKeyPath);
-                    keyContent = new String(resource.getInputStream().readAllBytes());
+                    rawKeyContent = new String(resource.getInputStream().readAllBytes());
                 }
             } else {
                 log.error("Axway OAuth private key not configured (neither base64 nor file path)");
                 return null;
             }
 
-            // Remove PEM headers and footers, and whitespace (handles both PEM and raw base64)
-            keyContent = keyContent
+            // Detect key format
+            boolean isPkcs1 = rawKeyContent.contains("BEGIN RSA PRIVATE KEY");
+            boolean isPkcs8 = rawKeyContent.contains("BEGIN PRIVATE KEY");
+
+            log.debug("Key format detected - PKCS#1: {}, PKCS#8: {}", isPkcs1, isPkcs8);
+
+            // Remove PEM headers and footers, and whitespace
+            String keyContent = rawKeyContent
                 .replace("-----BEGIN PRIVATE KEY-----", "")
                 .replace("-----END PRIVATE KEY-----", "")
                 .replace("-----BEGIN RSA PRIVATE KEY-----", "")
@@ -270,13 +378,90 @@ public class AxwayOAuthService {
                 .replaceAll("\\s", "");
 
             byte[] keyBytes = Base64.getDecoder().decode(keyContent);
-            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            return keyFactory.generatePrivate(keySpec);
+
+            if (isPkcs1 && !isPkcs8) {
+                // PKCS#1 format - need to wrap in PKCS#8 structure
+                log.debug("Converting PKCS#1 (RSA PRIVATE KEY) to PKCS#8 format");
+                return parsePkcs1PrivateKey(keyBytes, keyFactory);
+            } else if (isPkcs8) {
+                // PKCS#8 format - use directly
+                log.debug("Using PKCS#8 format (PRIVATE KEY) directly");
+                PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+                return keyFactory.generatePrivate(keySpec);
+            } else {
+                // Unknown format - try PKCS#8 first, then PKCS#1
+                log.debug("Unknown key format, attempting PKCS#8 then PKCS#1");
+                try {
+                    PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
+                    return keyFactory.generatePrivate(keySpec);
+                } catch (Exception e) {
+                    log.debug("PKCS#8 parsing failed, trying PKCS#1");
+                    return parsePkcs1PrivateKey(keyBytes, keyFactory);
+                }
+            }
         } catch (Exception e) {
-            log.error("Error parsing RSA private key", e);
+            log.error("Failed to parse Axway OAuth private key", e);
             return null;
         }
+    }
+
+    /**
+     * Parses a PKCS#1 formatted RSA private key by wrapping it in PKCS#8 structure
+     * PKCS#1 keys start with "BEGIN RSA PRIVATE KEY" and need conversion for Java
+     */
+    private PrivateKey parsePkcs1PrivateKey(byte[] pkcs1Bytes, KeyFactory keyFactory) throws Exception {
+        // PKCS#8 header for RSA private key
+        // This wraps the PKCS#1 key in the PKCS#8 structure that Java expects
+        int pkcs1Length = pkcs1Bytes.length;
+        int totalLength = pkcs1Length + 22; // PKCS#8 overhead
+
+        byte[] pkcs8Header;
+
+        if (pkcs1Length > 0x7F) {
+            if (pkcs1Length > 0xFF) {
+                // 3-byte length encoding
+                int seqLen = pkcs1Length + 22;
+                pkcs8Header = new byte[] {
+                    0x30, (byte) 0x82, (byte) ((seqLen >> 8) & 0xFF), (byte) (seqLen & 0xFF),
+                    0x02, 0x01, 0x00, // version
+                    0x30, 0x0D,       // AlgorithmIdentifier SEQUENCE
+                    0x06, 0x09, 0x2A, (byte) 0x86, 0x48, (byte) 0x86, (byte) 0xF7, 0x0D, 0x01, 0x01, 0x01, // RSA OID
+                    0x05, 0x00,       // NULL
+                    0x04, (byte) 0x82, (byte) ((pkcs1Length >> 8) & 0xFF), (byte) (pkcs1Length & 0xFF)
+                };
+            } else {
+                // 2-byte length encoding
+                int seqLen = pkcs1Length + 20;
+                pkcs8Header = new byte[] {
+                    0x30, (byte) 0x81, (byte) (seqLen & 0xFF),
+                    0x02, 0x01, 0x00, // version
+                    0x30, 0x0D,       // AlgorithmIdentifier SEQUENCE
+                    0x06, 0x09, 0x2A, (byte) 0x86, 0x48, (byte) 0x86, (byte) 0xF7, 0x0D, 0x01, 0x01, 0x01, // RSA OID
+                    0x05, 0x00,       // NULL
+                    0x04, (byte) 0x81, (byte) (pkcs1Length & 0xFF)
+                };
+            }
+        } else {
+            // 1-byte length encoding (small keys, unlikely for RSA)
+            int seqLen = pkcs1Length + 19;
+            pkcs8Header = new byte[] {
+                0x30, (byte) (seqLen & 0x7F),
+                0x02, 0x01, 0x00, // version
+                0x30, 0x0D,       // AlgorithmIdentifier SEQUENCE
+                0x06, 0x09, 0x2A, (byte) 0x86, 0x48, (byte) 0x86, (byte) 0xF7, 0x0D, 0x01, 0x01, 0x01, // RSA OID
+                0x05, 0x00,       // NULL
+                0x04, (byte) (pkcs1Length & 0x7F)
+            };
+        }
+
+        // Combine header and PKCS#1 key
+        byte[] pkcs8Bytes = new byte[pkcs8Header.length + pkcs1Length];
+        System.arraycopy(pkcs8Header, 0, pkcs8Bytes, 0, pkcs8Header.length);
+        System.arraycopy(pkcs1Bytes, 0, pkcs8Bytes, pkcs8Header.length, pkcs1Length);
+
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(pkcs8Bytes);
+        return keyFactory.generatePrivate(keySpec);
     }
 
     /**
