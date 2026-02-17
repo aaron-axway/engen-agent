@@ -235,7 +235,6 @@ public class OAuthStartupHealthCheck implements ApplicationRunner {
         // Axway Webhook
         log.debug("-- Axway Webhook --");
         logConfigVar("AXWAY_WEBHOOK_TOKEN", "webhook.axway.token", MaskType.TOKEN);
-        logConfigVar("AXWAY_WEBHOOK_SECRET", "webhook.axway.secret", MaskType.SECRET);
         logConfigVar("AXWAY_API_BASE_URL", "webhook.axway.api.base-url", MaskType.NONE);
         logConfigVar("AXWAY_PLATFORM_BASE_URL", "webhook.axway.platform.base-url", MaskType.NONE);
 

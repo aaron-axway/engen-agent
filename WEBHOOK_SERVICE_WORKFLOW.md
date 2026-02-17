@@ -647,19 +647,7 @@ Content-Type: application/json
 - Compared against configured `AXWAY_WEBHOOK_TOKEN`
 - Constant-time comparison to prevent timing attacks
 
-#### 2. HMAC-SHA256 Signature
-```http
-POST /webhooks/axway HTTP/1.1
-X-Axway-Signature: sha256=a3b2c1d4e5f6...
-Content-Type: application/json
-```
-
-**Validation**:
-- Signature extracted from `X-Axway-Signature` header
-- HMAC computed using shared secret and request body
-- Signatures compared using constant-time algorithm
-
-#### 3. Basic Authentication (ServiceNow)
+#### 2. Basic Authentication (ServiceNow)
 ```http
 POST /webhooks/servicenow HTTP/1.1
 Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=

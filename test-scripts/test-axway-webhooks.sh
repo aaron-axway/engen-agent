@@ -15,7 +15,6 @@ NC='\033[0m' # No Color
 
 # Configuration (set these environment variables)
 AXWAY_TOKEN=${AXWAY_WEBHOOK_TOKEN:-"your-bearer-token-here"}
-AXWAY_SECRET=${AXWAY_WEBHOOK_SECRET:-"your-hmac-secret-here"}
 
 print_header() {
     echo -e "\n${BLUE}=== $1 ===${NC}"
@@ -31,13 +30,6 @@ print_error() {
 
 print_warning() {
     echo -e "${YELLOW}⚠ $1${NC}"
-}
-
-# Function to calculate HMAC-SHA256 signature
-calculate_hmac() {
-    local payload="$1"
-    local secret="$2"
-    echo -n "$payload" | openssl dgst -sha256 -hmac "$secret" -hex | sed 's/^.* //'
 }
 
 # Test 1: Health Check
@@ -88,44 +80,7 @@ test_bearer_auth() {
     fi
 }
 
-# Test 3: HMAC Signature Authentication
-test_hmac_auth() {
-    print_header "Testing HMAC Signature Authentication"
-    
-    payload='{
-        "eventId": "axway-hmac-test-001",
-        "eventType": "api.updated",
-        "correlationId": "corr-hmac-001",
-        "payload": {
-            "requestId": "req-hmac-001",
-            "apiName": "test-api",
-            "version": "1.1",
-            "changes": ["description updated"]
-        },
-        "timestamp": "2025-01-01T10:05:00Z"
-    }'
-    
-    signature=$(calculate_hmac "$payload" "$AXWAY_SECRET")
-    
-    response=$(curl -s -w "\n%{http_code}" -X POST "$WEBHOOK_ENDPOINT" \
-        -H "Content-Type: application/json" \
-        -H "X-Axway-Signature: $signature" \
-        -d "$payload")
-    
-    http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n -1)
-    
-    if [ "$http_code" = "200" ]; then
-        print_success "HMAC signature authentication successful"
-        echo "$body" | jq '.' 2>/dev/null || echo "$body"
-    else
-        print_error "HMAC signature authentication failed with code: $http_code"
-        echo "Response: $body"
-        print_warning "Calculated signature: $signature"
-    fi
-}
-
-# Test 4: API Creation Event
+# Test 3: API Creation Event
 test_api_creation() {
     print_header "Testing API Creation Event"
     
@@ -279,13 +234,8 @@ main() {
         print_warning "Using default token. Set AXWAY_WEBHOOK_TOKEN environment variable for real testing."
     fi
     
-    if [ "$AXWAY_SECRET" = "your-hmac-secret-here" ]; then
-        print_warning "Using default secret. Set AXWAY_WEBHOOK_SECRET environment variable for real testing."
-    fi
-    
     test_health
     test_bearer_auth
-    test_hmac_auth
     test_api_creation
     test_subscription_creation
     test_invalid_auth

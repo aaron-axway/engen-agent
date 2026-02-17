@@ -56,7 +56,6 @@ logging:
 
 webhook:
   axway:
-    secret: ${AXWAY_WEBHOOK_SECRET:}
     token: ${AXWAY_WEBHOOK_TOKEN:}
     ignored-event-types: ${AXWAY_IGNORED_EVENT_TYPES:SubResourceUpdated}
     api:

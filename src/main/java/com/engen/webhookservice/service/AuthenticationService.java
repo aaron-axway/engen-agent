@@ -11,13 +11,11 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
+
 @Service
 public class AuthenticationService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthenticationService.class);
-
-    @Value("${webhook.axway.secret:}")
-    private String axwaySecret;
 
     @Value("${webhook.axway.token:}")
     private String axwayToken;
@@ -45,27 +43,6 @@ public class AuthenticationService {
             if (axwayToken.equals(token)) {
                 log.debug("Axway webhook authenticated via API key");
                 return true;
-            }
-        }
-
-        // Check for HMAC signature validation
-        String signature = request.getHeader("X-Axway-Signature");
-        if (signature != null && !axwaySecret.isEmpty()) {
-            try {
-                byte[] bodyBytes = request.getContentAsByteArray();
-                String body = new String(bodyBytes, StandardCharsets.UTF_8);
-                
-                String calculatedSignature = new HmacUtils(HmacAlgorithms.HMAC_SHA_256, axwaySecret)
-                    .hmacHex(body);
-
-                // Use timing-safe comparison to prevent timing attacks
-                if (MessageDigest.isEqual(calculatedSignature.getBytes(StandardCharsets.UTF_8),
-                                          signature.getBytes(StandardCharsets.UTF_8))) {
-                    log.debug("Axway webhook authenticated via HMAC signature");
-                    return true;
-                }
-            } catch (Exception e) {
-                log.error("Error validating Axway HMAC signature", e);
             }
         }
 

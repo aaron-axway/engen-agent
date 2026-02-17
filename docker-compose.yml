@@ -13,7 +13,6 @@ services:
       # JVM Configuration for Java 21+ compatibility
       - JAVA_OPTS=--enable-native-access=ALL-UNNAMED -XX:MaxMetaspaceSize=512m
       # Axway webhook configuration
-      - AXWAY_WEBHOOK_SECRET=${AXWAY_WEBHOOK_SECRET}
       - AXWAY_WEBHOOK_TOKEN=${AXWAY_WEBHOOK_TOKEN}
       - AXWAY_API_BASE_URL=${AXWAY_API_BASE_URL}
       - AXWAY_API_TOKEN=${AXWAY_API_TOKEN}
