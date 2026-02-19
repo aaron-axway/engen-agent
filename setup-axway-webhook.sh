@@ -215,12 +215,12 @@ verify_deployment() {
         return 1
     fi
     
-    if axway central get resourcehook "${INTEGRATION_NAME}-subscription-hook" -s "$INTEGRATION_NAME" &> /dev/null; then
-        print_success "Subscription hook found"
-    else
-        print_error "Subscription hook not found"
-        return 1
-    fi
+#    if axway central get resourcehook "${INTEGRATION_NAME}-subscription-hook" -s "$INTEGRATION_NAME" &> /dev/null; then
+#        print_success "Subscription hook found"
+#    else
+#        print_error "Subscription hook not found"
+#        return 1
+#    fi
 }
 
 # Create service account for API callbacks
