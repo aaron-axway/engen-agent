@@ -30,3 +30,4 @@ public_key.pem
 *.swp
 *~
 CLAUDE.md
+test-scripts/test-payload.json

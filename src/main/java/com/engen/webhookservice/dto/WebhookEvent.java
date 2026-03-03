@@ -19,15 +19,12 @@ public class WebhookEvent {
     @JsonProperty("eventType")
     private String eventType;
 
-    @NotBlank(message = "Event kind is required")
     @JsonProperty("kind")
     private String kind;
 
-    @NotBlank(message = "Event selflink is required")
     @JsonProperty("selfLink")
     private String selfLink;
 
-    @NotBlank(message = "Event references is required")
     @JsonProperty("references")
     private List<Map<String, Object>> references;
 

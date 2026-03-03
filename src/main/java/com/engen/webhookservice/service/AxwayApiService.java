@@ -322,6 +322,10 @@ public class AxwayApiService {
 
         String url = String.format("%s/user/%s", axwayPlatformBaseUrl, userId);
         Map<String, Object> response = getResource(url);
+        if (response == null) {
+            log.warn("Could not fetch user with ID: {} - user may no longer exist", userId);
+            return null;
+        }
         @SuppressWarnings( "unchecked")
         Map<String, Object> user = (Map<String, Object>) response.get("result");
         return user;

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,9 @@ public class WebhookController {
     private final EventProcessingService eventProcessingService;
     private final ObjectMapper objectMapper;
 
+    @Value("${webhook.debug.dump-payload:false}")
+    private boolean dumpPayload;
+
     public WebhookController(EventProcessingService eventProcessingService, ObjectMapper objectMapper) {
         this.eventProcessingService = eventProcessingService;
         this.objectMapper = objectMapper;
@@ -34,8 +38,20 @@ public class WebhookController {
             @RequestHeader Map<String, String> headers) {
         
         try {
+            // Dump raw payload for debugging/capture when enabled
+            if (dumpPayload) {
+                try {
+                    String prettyJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(rawPayload);
+                    System.out.println("=== WEBHOOK PAYLOAD START ===");
+                    System.out.println(prettyJson);
+                    System.out.println("=== WEBHOOK PAYLOAD END ===");
+                } catch (Exception dumpEx) {
+                    log.warn("Failed to dump webhook payload", dumpEx);
+                }
+            }
+
             WebhookEvent event;
-            
+
             // Check if this is an Axway-formatted event (has 'type' and 'product' fields)
             if (rawPayload.containsKey("type") && rawPayload.containsKey("product")) {
                 // Parse as Axway-specific format

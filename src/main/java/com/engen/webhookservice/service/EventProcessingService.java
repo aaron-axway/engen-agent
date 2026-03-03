@@ -187,7 +187,11 @@ public class EventProcessingService {
                                     Map<String, Object> user = (Map<String, Object>) u;
                                     String guid = (String) user.get("guid");
                                     Map<String, Object> ud = axwayApiService.getUser(guid);
-                                    log.debug("Found user with email: {}", ud.get("email"));
+                                    if (ud == null || ud.get("email") == null) {
+                                        log.warn("Could not retrieve email for user with guid: {} - skipping", guid);
+                                        continue;
+                                    }
+                                    log.info("Found user with email: {}", ud.get("email"));
                                     emails.add(ud.get("email").toString());
                                 }
                             }

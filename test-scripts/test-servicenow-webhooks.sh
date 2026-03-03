@@ -53,7 +53,7 @@ test_basic_auth() {
     print_header "Testing Basic Authentication"
     
     payload='{
-        "eventId": "snow-basic-test-001",
+        "id": "snow-basic-test-001",
         "eventType": "incident.created",
         "correlationId": "corr-basic-001",
         "payload": {
@@ -90,7 +90,7 @@ test_hmac_auth() {
     print_header "Testing HMAC Signature Authentication"
     
     payload='{
-        "eventId": "snow-hmac-test-001",
+        "id": "snow-hmac-test-001",
         "eventType": "incident.updated",
         "correlationId": "corr-hmac-001",
         "payload": {
@@ -129,7 +129,7 @@ test_incident_created() {
     print_header "Testing Incident Created Event"
     
     payload='{
-        "eventId": "snow-inc-create-001",
+        "id": "snow-inc-create-001",
         "eventType": "incident.created",
         "correlationId": "workflow-inc-001",
         "payload": {
@@ -174,7 +174,7 @@ test_change_request() {
     print_header "Testing Change Request Event"
     
     payload='{
-        "eventId": "snow-chg-req-001",
+        "id": "snow-chg-req-001",
         "eventType": "change.requested",
         "correlationId": "workflow-001",
         "payload": {
@@ -224,7 +224,7 @@ test_change_approval() {
     print_header "Testing Change Approval Event"
     
     payload='{
-        "eventId": "snow-chg-app-001",
+        "id": "snow-chg-app-001",
         "eventType": "change.approved",
         "correlationId": "workflow-001",
         "payload": {
@@ -270,7 +270,7 @@ test_incident_resolved() {
     print_header "Testing Incident Resolved Event"
     
     payload='{
-        "eventId": "snow-inc-res-001",
+        "id": "snow-inc-res-001",
         "eventType": "incident.resolved",
         "correlationId": "workflow-inc-res-001",
         "payload": {
@@ -314,7 +314,7 @@ test_incident_resolved() {
 test_invalid_auth() {
     print_header "Testing Invalid Authentication"
     
-    payload='{"eventId": "test", "eventType": "incident.created"}'
+    payload='{"id": "test", "eventType": "incident.created"}'
     
     # Test without authentication
     response=$(curl -s -w "\n%{http_code}" -X POST "$WEBHOOK_ENDPOINT" \
@@ -350,7 +350,7 @@ test_unknown_event() {
     print_header "Testing Unknown Event Type"
     
     payload='{
-        "eventId": "snow-unknown-001",
+        "id": "snow-unknown-001",
         "eventType": "unknown.event.type",
         "correlationId": "workflow-unknown-001",
         "payload": {

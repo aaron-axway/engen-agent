@@ -3,6 +3,8 @@
 # Axway Amplify Webhook Test Scripts
 # Test various Axway webhook events and authentication methods
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 BASE_URL="http://localhost:8080"
 WEBHOOK_ENDPOINT="${BASE_URL}/webhooks/axway"
 
@@ -13,7 +15,19 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration (set these environment variables)
+# Load .env from project root if it exists
+load_env() {
+    local env_file="${SCRIPT_DIR}/../.env"
+    if [ -f "$env_file" ]; then
+        set -a
+        source "$env_file"
+        set +a
+    fi
+}
+
+load_env
+
+# Configuration — .env is loaded above, CLI --token override applied below in arg parsing
 AXWAY_TOKEN=${AXWAY_WEBHOOK_TOKEN:-"your-bearer-token-here"}
 
 print_header() {
@@ -38,7 +52,7 @@ test_health() {
     
     response=$(curl -s -w "\n%{http_code}" "${BASE_URL}/webhooks/health")
     http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n -1)
+    body=$(echo "$response" | sed '$d')
     
     if [ "$http_code" = "200" ]; then
         print_success "Health endpoint responding: $body"
@@ -69,7 +83,7 @@ test_bearer_auth() {
         -d "$payload")
     
     http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n -1)
+    body=$(echo "$response" | sed '$d')
     
     if [ "$http_code" = "200" ]; then
         print_success "Bearer token authentication successful"
@@ -112,7 +126,7 @@ test_api_creation() {
         -d "$payload")
     
     http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n -1)
+    body=$(echo "$response" | sed '$d')
     
     if [ "$http_code" = "200" ]; then
         print_success "API creation event processed"
@@ -150,7 +164,7 @@ test_subscription_creation() {
         -d "$payload")
     
     http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n -1)
+    body=$(echo "$response" | sed '$d')
     
     if [ "$http_code" = "200" ]; then
         print_success "Subscription creation event processed"
@@ -194,6 +208,42 @@ test_invalid_auth() {
     fi
 }
 
+# Test: Post payload from a JSON file
+test_from_file() {
+    local file_path="$1"
+    print_header "Testing Payload from File: $file_path"
+
+    if [ ! -f "$file_path" ]; then
+        print_error "File not found: $file_path"
+        return 1
+    fi
+
+    # Validate JSON if jq is available
+    if command -v jq &> /dev/null; then
+        if ! jq empty "$file_path" 2>/dev/null; then
+            print_error "Invalid JSON in file: $file_path"
+            return 1
+        fi
+        print_success "JSON validated"
+    fi
+
+    response=$(curl -s -w "\n%{http_code}" -X POST "$WEBHOOK_ENDPOINT" \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $AXWAY_TOKEN" \
+        -d @"$file_path")
+
+    http_code=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | sed '$d')
+
+    if [ "$http_code" = "200" ]; then
+        print_success "File payload processed successfully (HTTP $http_code)"
+        echo "$body" | jq '.' 2>/dev/null || echo "$body"
+    else
+        print_error "File payload failed with code: $http_code"
+        echo "Response: $body"
+    fi
+}
+
 # Test 7: Unknown Event Type
 test_unknown_event() {
     print_header "Testing Unknown Event Type"
@@ -214,7 +264,7 @@ test_unknown_event() {
         -d "$payload")
     
     http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n -1)
+    body=$(echo "$response" | sed '$d')
     
     if [ "$http_code" = "200" ]; then
         print_success "Unknown event type handled gracefully"
@@ -245,7 +295,74 @@ main() {
     echo "All Axway webhook tests completed!"
 }
 
+usage() {
+    echo "Usage: $0 [OPTIONS]"
+    echo ""
+    echo "Options:"
+    echo "  --file, -f <path>    Post a webhook payload from a JSON file"
+    echo "  --token, -t <token>  Override the Axway bearer token"
+    echo "  --help, -h           Show this help message"
+    echo "  (no args)            Run all built-in test cases"
+    echo ""
+    echo "Token resolution order:"
+    echo "  1. --token/-t CLI argument (highest priority)"
+    echo "  2. AXWAY_WEBHOOK_TOKEN from .env or environment"
+    echo "  3. Fallback default"
+    echo ""
+    echo "Examples:"
+    echo "  $0                                              # Run all tests"
+    echo "  $0 --file test-scripts/test-payload.json        # Post from file"
+    echo "  $0 -t my-token -f test-scripts/test-payload.json  # Token + file"
+}
+
 # Run tests if script is executed directly
 if [ "${BASH_SOURCE[0]}" == "${0}" ]; then
-    main "$@"
+    ACTION=""
+    FILE_PATH=""
+    CLI_TOKEN=""
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --token|-t)
+                if [ -z "${2:-}" ]; then
+                    print_error "Missing token value. Usage: $0 --token <token>"
+                    exit 1
+                fi
+                CLI_TOKEN="$2"
+                shift 2
+                ;;
+            --file|-f)
+                if [ -z "${2:-}" ]; then
+                    print_error "Missing file path. Usage: $0 --file <path>"
+                    exit 1
+                fi
+                ACTION="file"
+                FILE_PATH="$2"
+                shift 2
+                ;;
+            --help|-h)
+                usage
+                exit 0
+                ;;
+            *)
+                print_error "Unknown option: $1"
+                usage
+                exit 1
+                ;;
+        esac
+    done
+
+    # Apply CLI token override if provided
+    if [ -n "$CLI_TOKEN" ]; then
+        AXWAY_TOKEN="$CLI_TOKEN"
+    fi
+
+    case "$ACTION" in
+        file)
+            test_from_file "$FILE_PATH"
+            ;;
+        *)
+            main
+            ;;
+    esac
 fi
