@@ -3,6 +3,8 @@
 # ServiceNow Webhook Test Scripts
 # Test various ServiceNow webhook events and authentication methods
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 BASE_URL="http://localhost:8080"
 WEBHOOK_ENDPOINT="${BASE_URL}/webhooks/servicenow"
 
@@ -13,7 +15,19 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Configuration (set these environment variables)
+# Load .env from project root if it exists
+load_env() {
+    local env_file="${SCRIPT_DIR}/../.env"
+    if [ -f "$env_file" ]; then
+        set -a
+        source "$env_file"
+        set +a
+    fi
+}
+
+load_env
+
+# Configuration — .env is loaded above, fallback defaults if not set
 SERVICENOW_USERNAME=${SERVICENOW_WEBHOOK_USERNAME:-"webhook-user"}
 SERVICENOW_PASSWORD=${SERVICENOW_WEBHOOK_PASSWORD:-"webhook-pass"}
 SERVICENOW_SECRET=${SERVICENOW_WEBHOOK_SECRET:-"your-hmac-secret-here"}
@@ -74,7 +88,7 @@ test_basic_auth() {
         -d "$payload")
     
     http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n -1)
+    body=$(echo "$response" | sed '$d')
     
     if [ "$http_code" = "200" ]; then
         print_success "Basic authentication successful"
@@ -112,7 +126,7 @@ test_hmac_auth() {
         -d "$payload")
     
     http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n -1)
+    body=$(echo "$response" | sed '$d')
     
     if [ "$http_code" = "200" ]; then
         print_success "HMAC signature authentication successful"
@@ -159,7 +173,7 @@ test_incident_created() {
         -d "$payload")
     
     http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n -1)
+    body=$(echo "$response" | sed '$d')
     
     if [ "$http_code" = "200" ]; then
         print_success "Incident created event processed"
@@ -209,7 +223,7 @@ test_change_request() {
         -d "$payload")
     
     http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n -1)
+    body=$(echo "$response" | sed '$d')
     
     if [ "$http_code" = "200" ]; then
         print_success "Change request event processed"
@@ -255,7 +269,7 @@ test_change_approval() {
         -d "$payload")
     
     http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n -1)
+    body=$(echo "$response" | sed '$d')
     
     if [ "$http_code" = "200" ]; then
         print_success "Change approval event processed (this should trigger Axway callback)"
@@ -300,7 +314,7 @@ test_incident_resolved() {
         -d "$payload")
     
     http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n -1)
+    body=$(echo "$response" | sed '$d')
     
     if [ "$http_code" = "200" ]; then
         print_success "Incident resolved event processed"
@@ -367,7 +381,7 @@ test_unknown_event() {
         -d "$payload")
     
     http_code=$(echo "$response" | tail -n1)
-    body=$(echo "$response" | head -n -1)
+    body=$(echo "$response" | sed '$d')
     
     if [ "$http_code" = "200" ]; then
         print_success "Unknown event type handled gracefully"
