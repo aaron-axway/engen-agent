@@ -3,6 +3,7 @@ package com.engen.webhookservice.dto;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -12,16 +13,20 @@ import java.util.Map;
 public class WebhookEvent {
     
     @NotBlank(message = "Event ID is required")
+    @Size(max = 512)
     @JsonProperty("id")
     private String eventId;
-    
+
     @NotBlank(message = "Event type is required")
+    @Size(max = 256)
     @JsonProperty("eventType")
     private String eventType;
 
+    @Size(max = 256)
     @JsonProperty("kind")
     private String kind;
 
+    @Size(max = 2048)
     @JsonProperty("selfLink")
     private String selfLink;
 
@@ -31,9 +36,11 @@ public class WebhookEvent {
     @JsonProperty("timestamp")
     private Instant timestamp = Instant.now();
     
+    @Size(max = 128)
     @JsonProperty("source")
     private String source;
-    
+
+    @Size(max = 512)
     @JsonProperty("correlationId")
     private String correlationId;
     

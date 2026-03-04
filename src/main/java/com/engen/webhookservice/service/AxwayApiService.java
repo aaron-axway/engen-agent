@@ -34,6 +34,38 @@ public class AxwayApiService {
     @Value("${webhook.axway.api.token:}")
     private String axwayApiToken;
 
+    private static final java.util.regex.Pattern VALID_PATH_SEGMENT = java.util.regex.Pattern.compile("^[a-zA-Z0-9._~:@!$&'()*+,;=/-]+$");
+
+    /**
+     * Validates a path segment to prevent SSRF attacks via URL manipulation.
+     */
+    private String validatePathSegment(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " must not be null or blank");
+        }
+        if (value.contains("..") || value.contains("//") || value.contains("?") || value.contains("#") || value.contains("\n") || value.contains("\r")) {
+            throw new IllegalArgumentException(fieldName + " contains invalid characters");
+        }
+        if (!VALID_PATH_SEGMENT.matcher(value).matches()) {
+            throw new IllegalArgumentException(fieldName + " contains invalid path characters");
+        }
+        return value;
+    }
+
+    /**
+     * Validates a selfLink to ensure it is a relative path, preventing SSRF via absolute URLs.
+     */
+    private String validateSelfLink(String selfLink, String fieldName) {
+        validatePathSegment(selfLink, fieldName);
+        if (!selfLink.startsWith("/")) {
+            throw new IllegalArgumentException(fieldName + " must be a relative path starting with /");
+        }
+        if (selfLink.contains("://")) {
+            throw new IllegalArgumentException(fieldName + " must not contain a protocol scheme");
+        }
+        return selfLink;
+    }
+
     public AxwayApiService(EventRecordRepository eventRecordRepository, AxwayOAuthService axwayOAuthService) {
         this.restTemplate = new RestTemplate();
         this.eventRecordRepository = eventRecordRepository;
@@ -166,6 +198,7 @@ public class AxwayApiService {
         }
 
         try {
+            validatePathSegment(requestId, "requestId");
             String url = axwayApiBaseUrl + "/requests/" + requestId + "/approval";
             
             HttpHeaders headers = new HttpHeaders();
@@ -178,6 +211,9 @@ public class AxwayApiService {
             restTemplate.exchange(url, HttpMethod.PUT, request, Map.class);
             
             return true;
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid requestId for approval API call: {}", e.getMessage());
+            return false;
         } catch (Exception e) {
             log.error("Failed to call Axway approval API for request: {}", requestId, e);
             return false;
@@ -214,6 +250,7 @@ public class AxwayApiService {
         }
         
         try {
+            validatePathSegment(apiServiceId, "apiServiceId");
             String url = axwayApiBaseUrl + "/apis/management/v1alpha1/apiservices/" + apiServiceId;
             log.debug("Fetching API service details from: {}", url);
             
@@ -226,6 +263,9 @@ public class AxwayApiService {
             
             log.info("Successfully fetched API service details for: {}", apiServiceId);
             return response;
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid apiServiceId: {}", e.getMessage());
+            return null;
         } catch (Exception e) {
             log.error("Failed to fetch API service details for: {}", apiServiceId, e);
             return null;
@@ -248,6 +288,8 @@ public class AxwayApiService {
         }
         
         try {
+            validatePathSegment(environmentName, "environmentName");
+            validatePathSegment(instanceName, "instanceName");
             String url = String.format("%s/apis/management/v1alpha1/environments/%s/apiserviceinstances/%s",
                 axwayApiBaseUrl, environmentName, instanceName);
             log.debug("Fetching API service instance from: {}", url);
@@ -261,6 +303,9 @@ public class AxwayApiService {
             
             log.info("Successfully fetched API service instance: {}/{}", environmentName, instanceName);
             return response;
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid environment/instance name: {}", e.getMessage());
+            return null;
         } catch (Exception e) {
             log.error("Failed to fetch API service instance: {}/{}", environmentName, instanceName, e);
             return null;
@@ -283,6 +328,7 @@ public class AxwayApiService {
         }
         
         try {
+            validatePathSegment(subscriptionId, "subscriptionId");
             String url = axwayApiBaseUrl + "/apis/management/v1alpha1/subscriptions/" + subscriptionId;
             log.debug("Fetching subscription details from: {}", url);
             
@@ -295,6 +341,9 @@ public class AxwayApiService {
             
             log.info("Successfully fetched subscription details for: {}", subscriptionId);
             return response;
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid subscriptionId: {}", e.getMessage());
+            return null;
         } catch (Exception e) {
             log.error("Failed to fetch subscription details for: {}", subscriptionId, e);
             return null;
@@ -307,11 +356,17 @@ public class AxwayApiService {
             return null;
         }
         
-        String url = String.format("%s/team/%s", axwayPlatformBaseUrl, teamId);
-        Map<String, Object> response = getResource(url);
-        @SuppressWarnings( "unchecked")
-        Map<String, Object> team = (Map<String, Object>) response.get("result");
-        return team;
+        try {
+            validatePathSegment(teamId, "teamId");
+            String url = String.format("%s/team/%s", axwayPlatformBaseUrl, teamId);
+            Map<String, Object> response = getResource(url);
+            @SuppressWarnings( "unchecked")
+            Map<String, Object> team = (Map<String, Object>) response.get("result");
+            return team;
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid teamId: {}", e.getMessage());
+            return null;
+        }
     }
 
     public Map<String, Object> getUser(String userId) {
@@ -320,15 +375,21 @@ public class AxwayApiService {
             return null;
         }
 
-        String url = String.format("%s/user/%s", axwayPlatformBaseUrl, userId);
-        Map<String, Object> response = getResource(url);
-        if (response == null) {
-            log.warn("Could not fetch user with ID: {} - user may no longer exist", userId);
+        try {
+            validatePathSegment(userId, "userId");
+            String url = String.format("%s/user/%s", axwayPlatformBaseUrl, userId);
+            Map<String, Object> response = getResource(url);
+            if (response == null) {
+                log.warn("Could not fetch user with ID: {} - user may no longer exist", userId);
+                return null;
+            }
+            @SuppressWarnings( "unchecked")
+            Map<String, Object> user = (Map<String, Object>) response.get("result");
+            return user;
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid userId: {}", e.getMessage());
             return null;
         }
-        @SuppressWarnings( "unchecked")
-        Map<String, Object> user = (Map<String, Object>) response.get("result");
-        return user;
     }
 
     public Map<String, Object> setApproved(String selfLink) {
@@ -336,6 +397,7 @@ public class AxwayApiService {
     }
 
     public Map<String, Object> updateApprovalSubResource(String selfLink, String state) {
+        validateSelfLink(selfLink, "selfLink");
         String link = String.format("%s/approval", selfLink);
         Map<String, Object> payload = Map.of("approval", Map.of(
                         "state", Map.of(
@@ -348,17 +410,7 @@ public class AxwayApiService {
     }
 
     public Map<String, Object> getResourceBySelflink(String selfLink) {
-//        if (axwayApiBaseUrl.isEmpty()) {
-//            log.warn("Axway API configuration missing - base URL not configured");
-//            return null;
-//        }
-//
-//        String authHeader = getAuthorizationHeader();
-//        if (authHeader == null) {
-//            log.warn("Axway API authentication not configured - cannot fetch access request");
-//            return null;
-//        }
-
+        validateSelfLink(selfLink, "selfLink");
         String url = String.format("%s/apis%s", axwayApiBaseUrl, selfLink);
         return getResource(url);
     }
@@ -391,6 +443,7 @@ public class AxwayApiService {
         }
     }
     public Map<String, Object> updateResourceBySelflink(String selfLink, Map<String, Object> payload) {
+        validateSelfLink(selfLink, "selfLink");
         String url = String.format("%s/apis%s", axwayApiBaseUrl, selfLink);
         return updateResource(url, payload);
     }

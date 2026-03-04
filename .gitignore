@@ -32,3 +32,4 @@ public_key.pem
 CLAUDE.md
 test-scripts/test-payload.json
 .claude/
+logs/

@@ -40,7 +40,9 @@ public class AuthenticationService {
                 token = authHeader.substring(7);
             }
             
-            if (axwayToken.equals(token)) {
+            // Use timing-safe comparison to prevent timing attacks
+            if (MessageDigest.isEqual(axwayToken.getBytes(StandardCharsets.UTF_8),
+                                      token.getBytes(StandardCharsets.UTF_8))) {
                 log.debug("Axway webhook authenticated via API key");
                 return true;
             }
@@ -59,8 +61,11 @@ public class AuthenticationService {
             String[] parts = credentials.split(":");
             
             if (parts.length == 2 && 
-                serviceNowUsername.equals(parts[0]) && 
-                serviceNowPassword.equals(parts[1])) {
+                // Use timing-safe comparison to prevent timing attacks
+                MessageDigest.isEqual(serviceNowUsername.getBytes(StandardCharsets.UTF_8),
+                                      parts[0].getBytes(StandardCharsets.UTF_8)) &&
+                MessageDigest.isEqual(serviceNowPassword.getBytes(StandardCharsets.UTF_8),
+                                      parts[1].getBytes(StandardCharsets.UTF_8))) {
                 log.debug("ServiceNow webhook authenticated via Basic auth");
                 return true;
             }

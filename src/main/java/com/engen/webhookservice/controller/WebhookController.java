@@ -4,16 +4,21 @@ import com.engen.webhookservice.dto.AxwayWebhookEvent;
 import com.engen.webhookservice.dto.WebhookEvent;
 import com.engen.webhookservice.service.EventProcessingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/webhooks")
@@ -23,16 +28,28 @@ public class WebhookController {
 
     private final EventProcessingService eventProcessingService;
     private final ObjectMapper objectMapper;
+    private final Validator validator;
 
     @Value("${webhook.debug.dump-payload:false}")
     private boolean dumpPayload;
 
-    public WebhookController(EventProcessingService eventProcessingService, ObjectMapper objectMapper) {
+    public WebhookController(EventProcessingService eventProcessingService, ObjectMapper objectMapper, Validator validator) {
         this.eventProcessingService = eventProcessingService;
         this.objectMapper = objectMapper;
+        this.validator = validator;
     }
 
-    @PostMapping("/axway")
+    private <T> void validateEvent(T event) {
+        Set<ConstraintViolation<T>> violations = validator.validate(event);
+        if (!violations.isEmpty()) {
+            String message = violations.stream()
+                .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                .collect(Collectors.joining(", "));
+            throw new IllegalArgumentException("Validation failed: " + message);
+        }
+    }
+
+    @PostMapping(value = "/axway", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, String>> handleAxwayWebhook(
             @RequestBody Map<String, Object> rawPayload,
             @RequestHeader Map<String, String> headers) {
@@ -56,14 +73,16 @@ public class WebhookController {
             if (rawPayload.containsKey("type") && rawPayload.containsKey("product")) {
                 // Parse as Axway-specific format
                 AxwayWebhookEvent axwayEvent = objectMapper.convertValue(rawPayload, AxwayWebhookEvent.class);
+                validateEvent(axwayEvent);
                 log.info("Received Axway webhook event (native format): {}", axwayEvent.getType());
                 log.debug("Axway native event payload: {}", axwayEvent);
-                
+
                 // Convert to generic format for processing
                 event = axwayEvent.toWebhookEvent();
             } else {
                 // Parse as generic webhook format (backward compatibility)
                 event = objectMapper.convertValue(rawPayload, WebhookEvent.class);
+                validateEvent(event);
                 log.info("Received Axway webhook event (generic format): {}", event.getEventType());
                 log.debug("Axway generic event payload: {}", event);
             }
@@ -97,7 +116,7 @@ public class WebhookController {
         }
     }
 
-    @PostMapping("/servicenow")
+    @PostMapping(value = "/servicenow", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, String>> handleServiceNowWebhook(
             @RequestBody @Valid WebhookEvent event,
             @RequestHeader Map<String, String> headers) {

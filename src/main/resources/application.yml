@@ -22,6 +22,9 @@ spring:
       enabled: ${H2_CONSOLE_ENABLED:false}
       path: /h2-console
 
+  codec:
+    max-in-memory-size: 1MB
+
   lifecycle:
     timeout-per-shutdown-phase: 30s
 
@@ -30,6 +33,9 @@ server:
   servlet:
     context-path: /
   shutdown: graceful
+  max-http-request-header-size: 16KB
+  tomcat:
+    max-swallow-size: 1MB
 
 # Logging: Console always active. File logging opt-in via WEBHOOK_LOG_FILE env var.
 # Set WEBHOOK_LOG_FILE=./logs/webhook-service.log to also write to a file.
@@ -55,7 +61,7 @@ webhook:
     token: ${AXWAY_WEBHOOK_TOKEN:}
     ignored-event-types: ${AXWAY_IGNORED_EVENT_TYPES:SubResourceUpdated}
     api:
-      base-url: ${AXWAY_API_BASE_URL:https://api-env.demo.axway.com}
+      base-url: ${AXWAY_API_BASE_URL:https://apicentral.axway.com}
       token: ${AXWAY_API_TOKEN:}
     platform:
       base-url: ${AXWAY_PLATFORM_BASE_URL:https://platform.axway.com/api/v1}

@@ -3,6 +3,7 @@ package com.engen.webhookservice.dto;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.util.HashMap;
 import java.util.List;
@@ -15,22 +16,28 @@ import java.util.Map;
 public class AxwayWebhookEvent {
     
     @NotBlank(message = "Event ID is required")
+    @Size(max = 512)
     @JsonProperty("id")
     private String id;
-    
+
+    @Size(max = 64)
     @JsonProperty("time")
     private String time;
-    
+
+    @Size(max = 64)
     @JsonProperty("version")
     private String version;
-    
+
+    @Size(max = 256)
     @JsonProperty("product")
     private String product;
-    
+
     @NotBlank(message = "Event type is required")
+    @Size(max = 256)
     @JsonProperty("type")
     private String type;
-    
+
+    @Size(max = 512)
     @JsonProperty("correlationId")
     private String correlationId;
     
