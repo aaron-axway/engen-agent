@@ -37,19 +37,15 @@ check_java() {
     print_success "Java version: $java_version"
 }
 
-# Build the application if needed
+# Always invoke Gradle — its incremental build is smart enough to skip work if
+# nothing changed, and catches the "source newer than JAR" case automatically.
 build_if_needed() {
-    if [ ! -f "build/libs/webhook-service-0.0.1-SNAPSHOT.jar" ]; then
-        print_warning "JAR file not found. Building application..."
-        ./gradlew bootJar
-        if [ $? -ne 0 ]; then
-            print_error "Build failed"
-            exit 1
-        fi
-        print_success "Build completed"
-    else
-        print_success "JAR file found"
+    print_header "Building (Gradle will skip if nothing changed)"
+    if ! ./gradlew bootJar; then
+        print_error "Build failed"
+        exit 1
     fi
+    print_success "Build ready"
 }
 
 # Start the application with proper JVM arguments
@@ -97,15 +93,17 @@ start_application() {
     java "${JVM_ARGS[@]}" -jar "$JAR_FILE"
 }
 
-# Load environment variables from .env file
+# Load environment variables from the selected env file
 load_env_file() {
-    if [ -f ".env" ]; then
-        print_success "Loading environment variables from .env file"
+    local env_file="${ENV_FILE:-.env}"
+    if [ -f "$env_file" ]; then
+        print_success "Loading environment variables from $env_file"
         set -a  # automatically export all variables
-        source .env
+        # shellcheck disable=SC1090
+        source "$env_file"
         set +a
     else
-        print_warning "No .env file found - using system environment variables"
+        print_warning "Env file '$env_file' not found - using system environment variables"
     fi
 }
 
@@ -149,46 +147,86 @@ main() {
 }
 
 # Handle script arguments
-case "$1" in
-    "help"|"-h"|"--help")
-        echo "Webhook Service Startup Script"
-        echo ""
-        echo "Usage: $0 [options]"
-        echo ""
-        echo "Options:"
-        echo "  help, -h, --help     Show this help message"
-        echo "  build               Build the application only"
-        echo "  clean               Clean build artifacts"
-        echo ""
-        echo "Environment Variables:"
-        echo "  WEBHOOK_SERVICE_MEMORY   Set JVM memory limit (e.g., '512m', '1g')"
-        echo "  WEBHOOK_DEBUG=true       Enable remote debugging on port 5005"
-        echo "  WEBHOOK_MONITORING=true  Enable JMX monitoring on port 9999"
-        echo "  SPRING_PROFILES_ACTIVE   Set Spring profile (default: dev)"
-        echo "  SERVER_PORT             Set server port (default: 8080)"
-        echo ""
-        echo "Examples:"
-        echo "  $0                                    # Start with default settings"
-        echo "  WEBHOOK_SERVICE_MEMORY=1g $0         # Start with 1GB memory"
-        echo "  WEBHOOK_DEBUG=true $0                # Start with debug enabled"
-        echo "  SERVER_PORT=9090 $0                  # Start on port 9090"
+ACTION="run"
+ENV_FILE=".env"
+
+show_help() {
+    echo "Webhook Service Startup Script"
+    echo ""
+    echo "Usage: $0 [options] [command]"
+    echo ""
+    echo "Commands:"
+    echo "  (none)              Start the service (default)"
+    echo "  build               Build the application only"
+    echo "  clean               Clean build artifacts"
+    echo "  help, -h, --help    Show this help message"
+    echo ""
+    echo "Options:"
+    echo "  -e, --env-file <path>    Load env vars from <path> instead of .env"
+    echo ""
+    echo "Environment Variables:"
+    echo "  ENV_FILE                 Alternative to --env-file (flag takes precedence)"
+    echo "  WEBHOOK_SERVICE_MEMORY   Set JVM memory limit (e.g., '512m', '1g')"
+    echo "  WEBHOOK_DEBUG=true       Enable remote debugging on port 5005"
+    echo "  WEBHOOK_MONITORING=true  Enable JMX monitoring on port 9999"
+    echo "  SPRING_PROFILES_ACTIVE   Set Spring profile (default: dev)"
+    echo "  SERVER_PORT              Set server port (default: 8080)"
+    echo ""
+    echo "Examples:"
+    echo "  $0                                    # Start with .env"
+    echo "  $0 --env-file .env-mock               # Start against the mock server"
+    echo "  $0 -e .env-mock                       # Short form"
+    echo "  ENV_FILE=.env-mock $0                 # Via environment variable"
+    echo "  WEBHOOK_SERVICE_MEMORY=1g $0          # Start with 1GB memory"
+    echo "  WEBHOOK_DEBUG=true $0                 # Start with debug enabled"
+    echo "  SERVER_PORT=9090 $0                   # Start on port 9090"
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -e|--env-file)
+            if [ -z "${2:-}" ]; then
+                print_error "$1 requires a path argument"
+                exit 1
+            fi
+            ENV_FILE="$2"
+            shift 2
+            ;;
+        help|-h|--help)
+            ACTION="help"
+            shift
+            ;;
+        build)
+            ACTION="build"
+            shift
+            ;;
+        clean)
+            ACTION="clean"
+            shift
+            ;;
+        *)
+            print_error "Unknown option: $1"
+            echo "Use '$0 help' for usage information"
+            exit 1
+            ;;
+    esac
+done
+
+case "$ACTION" in
+    help)
+        show_help
         ;;
-    "build")
+    build)
         print_header "Building Application"
         check_java
         ./gradlew bootJar
         ;;
-    "clean")
+    clean)
         print_header "Cleaning Build Artifacts"
         ./gradlew clean
         print_success "Clean completed"
         ;;
-    "")
+    run)
         main
-        ;;
-    *)
-        print_error "Unknown option: $1"
-        echo "Use '$0 help' for usage information"
-        exit 1
         ;;
 esac

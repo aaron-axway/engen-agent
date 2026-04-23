@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 1000" font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+<defs>
+  <marker id="arrow-ax" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#2563eb"/>
+  </marker>
+  <marker id="arrow-db" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#16a34a"/>
+  </marker>
+  <marker id="arrow-hm" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#9333ea"/>
+  </marker>
+  <marker id="arrow-cb" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="#ea580c"/>
+  </marker>
+</defs>
+<rect width="1240" height="1000" fill="#ffffff"/>
+<text x="620" y="40" text-anchor="middle" font-size="18" font-weight="600" fill="#111827">Webhook Service — Request Flow</text>
+<text x="620" y="62" text-anchor="middle" font-size="12" fill="#6b7280">Axway Amplify → Webhook Service → Highmark/ServiceNow → Callback → Axway</text>
+<rect x="30" y="78" width="200" height="50" rx="8" ry="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+<text x="130" y="100" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">Axway Amplify</text>
+<text x="130" y="118" text-anchor="middle" font-size="11" fill="#6b7280">upstream source</text>
+<line x1="130" y1="128" x2="130" y2="920" stroke="#9ca3af" stroke-width="1" stroke-dasharray="5,4"/>
+<rect x="290" y="78" width="200" height="50" rx="8" ry="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+<text x="390" y="100" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">Webhook Service</text>
+<text x="390" y="118" text-anchor="middle" font-size="11" fill="#6b7280">Spring Boot</text>
+<line x1="390" y1="128" x2="390" y2="920" stroke="#9ca3af" stroke-width="1" stroke-dasharray="5,4"/>
+<rect x="540" y="78" width="200" height="50" rx="8" ry="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+<text x="640" y="100" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">H2 Database</text>
+<text x="640" y="118" text-anchor="middle" font-size="11" fill="#6b7280">event_records</text>
+<line x1="640" y1="128" x2="640" y2="920" stroke="#9ca3af" stroke-width="1" stroke-dasharray="5,4"/>
+<rect x="790" y="78" width="200" height="50" rx="8" ry="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+<text x="890" y="100" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">Highmark</text>
+<text x="890" y="118" text-anchor="middle" font-size="11" fill="#6b7280">OAuth + SNow Catalog</text>
+<line x1="890" y1="128" x2="890" y2="920" stroke="#9ca3af" stroke-width="1" stroke-dasharray="5,4"/>
+<rect x="1030" y="78" width="200" height="50" rx="8" ry="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+<text x="1130" y="100" text-anchor="middle" font-size="14" font-weight="600" fill="#111827">ServiceNow</text>
+<text x="1130" y="118" text-anchor="middle" font-size="11" fill="#6b7280">approver</text>
+<line x1="1130" y1="128" x2="1130" y2="920" stroke="#9ca3af" stroke-width="1" stroke-dasharray="5,4"/>
+<rect x="30" y="148" width="200" height="20" rx="10" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+<text x="130" y="162" text-anchor="middle" font-size="11" font-weight="600" fill="#2563eb">1 · Forward Flow</text>
+<line x1="134" y1="195" x2="386" y2="195" stroke="#2563eb" stroke-width="1.8" marker-end="url(#arrow-ax)"/>
+<rect x="184" y="175" width="152" height="16" fill="#ffffff" opacity="0.96"/>
+<text x="260" y="187" text-anchor="middle" font-size="12" font-weight="600" fill="#2563eb">POST /webhooks/axway</text>
+<rect x="164" y="199" width="192" height="14" fill="#ffffff" opacity="0.96"/>
+<text x="260" y="210" text-anchor="middle" font-size="10" fill="#6b7280">ResourceCreated · AssetRequest</text>
+<line x1="394" y1="250" x2="636" y2="250" stroke="#16a34a" stroke-width="1.8" marker-end="url(#arrow-db)"/>
+<rect x="474" y="230" width="82" height="16" fill="#ffffff" opacity="0.96"/>
+<text x="515" y="242" text-anchor="middle" font-size="12" font-weight="600" fill="#16a34a">save event</text>
+<rect x="458" y="254" width="114" height="14" fill="#ffffff" opacity="0.96"/>
+<text x="515" y="265" text-anchor="middle" font-size="10" fill="#6b7280">status = RECEIVED</text>
+<line x1="386" y1="305" x2="134" y2="305" stroke="#2563eb" stroke-width="1.8" marker-end="url(#arrow-ax)"/>
+<rect x="205" y="285" width="110" height="16" fill="#ffffff" opacity="0.96"/>
+<text x="260" y="297" text-anchor="middle" font-size="12" font-weight="600" fill="#2563eb">GET {selfLink}</text>
+<rect x="179" y="309" width="162" height="14" fill="#ffffff" opacity="0.96"/>
+<text x="260" y="320" text-anchor="middle" font-size="10" fill="#6b7280">fetch Asset + Team + User</text>
+<line x1="386" y1="360" x2="134" y2="360" stroke="#2563eb" stroke-width="1.8" marker-end="url(#arrow-ax)"/>
+<rect x="174" y="340" width="173" height="16" fill="#ffffff" opacity="0.96"/>
+<text x="260" y="352" text-anchor="middle" font-size="12" font-weight="600" fill="#2563eb">PUT {selfLink}/approval</text>
+<rect x="185" y="364" width="150" height="14" fill="#ffffff" opacity="0.96"/>
+<text x="260" y="375" text-anchor="middle" font-size="10" fill="#6b7280">auto-approve Axway side</text>
+<line x1="394" y1="415" x2="886" y2="415" stroke="#9333ea" stroke-width="1.8" marker-end="url(#arrow-hm)"/>
+<rect x="571" y="395" width="138" height="16" fill="#ffffff" opacity="0.96"/>
+<text x="640" y="407" text-anchor="middle" font-size="12" font-weight="600" fill="#9333ea">POST /oauth2/token</text>
+<rect x="580" y="419" width="120" height="14" fill="#ffffff" opacity="0.96"/>
+<text x="640" y="430" text-anchor="middle" font-size="10" fill="#6b7280">client_credentials</text>
+<line x1="394" y1="470" x2="886" y2="470" stroke="#9333ea" stroke-width="1.8" marker-end="url(#arrow-hm)"/>
+<rect x="582" y="450" width="117" height="16" fill="#ffffff" opacity="0.96"/>
+<text x="640" y="462" text-anchor="middle" font-size="12" font-weight="600" fill="#9333ea">POST /order_now</text>
+<rect x="562" y="474" width="156" height="14" fill="#ffffff" opacity="0.96"/>
+<text x="640" y="485" text-anchor="middle" font-size="10" fill="#6b7280">submit SNow catalog item</text>
+<line x1="886" y1="525" x2="394" y2="525" stroke="#9333ea" stroke-width="1.8" marker-end="url(#arrow-hm)"/>
+<rect x="585" y="505" width="110" height="16" fill="#ffffff" opacity="0.96"/>
+<text x="640" y="517" text-anchor="middle" font-size="12" font-weight="600" fill="#9333ea">request_number</text>
+<rect x="604" y="529" width="72" height="14" fill="#ffffff" opacity="0.96"/>
+<text x="640" y="540" text-anchor="middle" font-size="10" fill="#6b7280">REQ0012345</text>
+<line x1="394" y1="580" x2="636" y2="580" stroke="#16a34a" stroke-width="1.8" marker-end="url(#arrow-db)"/>
+<rect x="467" y="560" width="96" height="16" fill="#ffffff" opacity="0.96"/>
+<text x="515" y="572" text-anchor="middle" font-size="12" font-weight="600" fill="#16a34a">update event</text>
+<rect x="422" y="584" width="186" height="14" fill="#ffffff" opacity="0.96"/>
+<text x="515" y="595" text-anchor="middle" font-size="10" fill="#6b7280">status = PROCESSED · ticketId</text>
+<line x1="40" y1="630" x2="1200" y2="630" stroke="#d1d5db" stroke-width="1" stroke-dasharray="3,3"/>
+<rect x="440" y="619" width="360" height="22" rx="11" fill="#fff7ed" stroke="#fed7aa" stroke-width="1"/>
+<text x="620" y="634" text-anchor="middle" font-size="12" font-weight="600" fill="#ea580c">⌛ Awaiting decision in ServiceNow</text>
+<rect x="30" y="653" width="220" height="20" rx="10" fill="#fff7ed" stroke="#fed7aa" stroke-width="1"/>
+<text x="140" y="667" text-anchor="middle" font-size="11" font-weight="600" fill="#ea580c">2 · Callback Flow</text>
+<line x1="1126" y1="705" x2="394" y2="705" stroke="#ea580c" stroke-width="1.8" marker-end="url(#arrow-cb)"/>
+<rect x="667" y="685" width="187" height="16" fill="#ffffff" opacity="0.96"/>
+<text x="760" y="697" text-anchor="middle" font-size="12" font-weight="600" fill="#ea580c">POST /webhooks/servicenow</text>
+<rect x="655" y="709" width="210" height="14" fill="#ffffff" opacity="0.96"/>
+<text x="760" y="720" text-anchor="middle" font-size="10" fill="#6b7280">change.approved | change.rejected</text>
+<line x1="394" y1="760" x2="636" y2="760" stroke="#16a34a" stroke-width="1.8" marker-end="url(#arrow-db)"/>
+<rect x="425" y="740" width="180" height="16" fill="#ffffff" opacity="0.96"/>
+<text x="515" y="752" text-anchor="middle" font-size="12" font-weight="600" fill="#16a34a">lookup by correlation_id</text>
+<rect x="434" y="764" width="162" height="14" fill="#ffffff" opacity="0.96"/>
+<text x="515" y="775" text-anchor="middle" font-size="10" fill="#6b7280">find original Axway event</text>
+<line x1="394" y1="815" x2="636" y2="815" stroke="#16a34a" stroke-width="1.8" marker-end="url(#arrow-db)"/>
+<rect x="446" y="795" width="138" height="16" fill="#ffffff" opacity="0.96"/>
+<text x="515" y="807" text-anchor="middle" font-size="12" font-weight="600" fill="#16a34a">set approval_state</text>
+<rect x="452" y="819" width="126" height="14" fill="#ffffff" opacity="0.96"/>
+<text x="515" y="830" text-anchor="middle" font-size="10" fill="#6b7280">APPROVED | REJECTED</text>
+<line x1="386" y1="870" x2="134" y2="870" stroke="#ea580c" stroke-width="1.8" marker-end="url(#arrow-cb)"/>
+<rect x="174" y="850" width="173" height="16" fill="#ffffff" opacity="0.96"/>
+<text x="260" y="862" text-anchor="middle" font-size="12" font-weight="600" fill="#ea580c">PUT {selfLink}/approval</text>
+<rect x="173" y="874" width="174" height="14" fill="#ffffff" opacity="0.96"/>
+<text x="260" y="885" text-anchor="middle" font-size="10" fill="#6b7280">propagate decision to Axway</text>
+<line x1="394" y1="925" x2="636" y2="925" stroke="#16a34a" stroke-width="1.8" marker-end="url(#arrow-db)"/>
+<rect x="443" y="905" width="145" height="16" fill="#ffffff" opacity="0.96"/>
+<text x="515" y="917" text-anchor="middle" font-size="12" font-weight="600" fill="#16a34a">set callback_status</text>
+<rect x="434" y="929" width="162" height="14" fill="#ffffff" opacity="0.96"/>
+<text x="515" y="940" text-anchor="middle" font-size="10" fill="#6b7280">SUCCESS | FAILED_API_CALL</text>
+<rect x="30" y="948" width="1180" height="36" rx="6" fill="#f9fafb" stroke="#e5e7eb" stroke-width="1"/>
+<line x1="50" y1="966" x2="76" y2="966" stroke="#2563eb" stroke-width="1.8" marker-end="url(#arrow-ax)"/>
+<text x="84" y="970" font-size="11" fill="#111827">Axway forward + enrich + auto-approve</text>
+<line x1="352" y1="966" x2="378" y2="966" stroke="#9333ea" stroke-width="1.8" marker-end="url(#arrow-hm)"/>
+<text x="386" y="970" font-size="11" fill="#111827">Highmark OAuth + SNow catalog submit</text>
+<line x1="648" y1="966" x2="674" y2="966" stroke="#16a34a" stroke-width="1.8" marker-end="url(#arrow-db)"/>
+<text x="682" y="970" font-size="11" fill="#111827">H2 database write / lookup</text>
+<line x1="884" y1="966" x2="910" y2="966" stroke="#ea580c" stroke-width="1.8" marker-end="url(#arrow-cb)"/>
+<text x="918" y="970" font-size="11" fill="#111827">ServiceNow callback + Axway propagation</text>
+</svg>

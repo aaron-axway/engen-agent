@@ -114,7 +114,10 @@ public class EventProcessingService {
                 handleServiceNowChangeRequested(event);
                 break;
             case "change.approved":
-                handleServiceNowChangeApproved(event);
+                handleServiceNowApprovalDecision(event, "APPROVED");
+                break;
+            case "change.rejected":
+                handleServiceNowApprovalDecision(event, "REJECTED");
                 break;
             default:
                 log.warn("Unknown ServiceNow event type: {}", event.getEventType());
@@ -319,30 +322,82 @@ public class EventProcessingService {
         return value;
     }
 
-    private void handleServiceNowChangeApproved(WebhookEvent event) {
-        log.info("Handling ServiceNow change approved event");
+    private void handleServiceNowApprovalDecision(WebhookEvent event, String approvalState) {
+        log.info("Handling ServiceNow {} decision event", approvalState);
 
-        // Extract approval details from ServiceNow event
         String approvalComments = extractApprovalComments(event);
-        String approvalState = "APPROVED";
 
-        // Send email notification about approval
+        // Send email notification about the decision
         if (emailService != null && emailService.isEmailEnabled()) {
             emailService.sendApprovalNotification(event, approvalState, approvalComments);
         }
 
-        // Find the related Axway event using correlation ID
-        if (event.getCorrelationId() != null) {
-            Optional<EventRecord> relatedEvent = eventRecordRepository.findByEventId(event.getCorrelationId());
-            if (relatedEvent.isPresent()) {
-                log.info("Found related Axway event, updating approval state");
-                axwayApiService.updateApprovalState(event.getCorrelationId(), approvalState, approvalComments);
-            } else {
-                log.warn("No related Axway event found for correlation ID: {}", event.getCorrelationId());
-            }
-        } else {
-            log.warn("No correlation ID provided in ServiceNow approval event");
+        if (event.getCorrelationId() == null) {
+            log.warn("No correlation ID provided in ServiceNow {} event", approvalState);
+            return;
         }
+
+        Optional<EventRecord> relatedEventOpt = eventRecordRepository.findByEventId(event.getCorrelationId());
+        if (relatedEventOpt.isEmpty()) {
+            log.warn("No related Axway event found for correlation ID: {}", event.getCorrelationId());
+            return;
+        }
+
+        EventRecord relatedEvent = relatedEventOpt.get();
+
+        // Persist the ServiceNow decision immediately, regardless of callback outcome
+        relatedEvent.setApprovalState(approvalState);
+
+        try {
+            String selfLink = extractSelfLink(relatedEvent);
+            if (selfLink == null) {
+                log.error("Unable to extract selfLink from related Axway event for correlation ID: {}", event.getCorrelationId());
+                relatedEvent.setCallbackStatus("FAILED_NO_SELFLINK");
+                return;
+            }
+
+            // Axway Amplify expects lowercase state names
+            String axwayState = approvalState.toLowerCase();
+            log.info("Propagating {} to Axway via selfLink {}", axwayState, selfLink);
+
+            Map<String, Object> response = axwayApiService.updateApprovalSubResource(selfLink, axwayState);
+
+            if (response != null) {
+                relatedEvent.setCallbackStatus("SUCCESS");
+                log.info("Successfully propagated {} to Axway for correlation ID: {}", approvalState, event.getCorrelationId());
+            } else {
+                relatedEvent.setCallbackStatus("FAILED_API_CALL");
+                log.error("Failed to propagate {} to Axway for correlation ID: {}", approvalState, event.getCorrelationId());
+            }
+        } catch (Exception e) {
+            log.error("Error propagating {} to Axway for correlation ID: {}", approvalState, event.getCorrelationId(), e);
+            relatedEvent.setCallbackStatus("FAILED_EXCEPTION");
+            relatedEvent.setErrorMessage(e.getMessage());
+        } finally {
+            relatedEvent.setCallbackAttemptedAt(Instant.now());
+            eventRecordRepository.save(relatedEvent);
+        }
+    }
+
+    private String extractSelfLink(EventRecord eventRecord) {
+        Map<String, Object> payload = eventRecord.getPayload();
+        if (payload == null) {
+            return null;
+        }
+
+        // Axway native format nests metadata.selfLink
+        Object metadataObj = payload.get("metadata");
+        if (metadataObj instanceof Map) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> metadata = (Map<String, Object>) metadataObj;
+            Object selfLink = metadata.get("selfLink");
+            if (selfLink != null) {
+                return selfLink.toString();
+            }
+        }
+
+        Object selfLink = payload.get("selfLink");
+        return selfLink != null ? selfLink.toString() : null;
     }
 
     private String extractApprovalComments(WebhookEvent event) {
@@ -363,12 +418,12 @@ public class EventProcessingService {
                         }
                     }
                 }
-                return comments != null ? comments.toString() : "Approved via ServiceNow";
+                return comments != null ? comments.toString() : "";
             }
         } catch (Exception e) {
             log.error("Error extracting approval comments from event payload", e);
         }
-        return "Approved via ServiceNow";
+        return "";
     }
 
     /**

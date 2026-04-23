@@ -33,18 +33,17 @@ public class WebhookAuthenticationFilter extends OncePerRequestFilter {
         }
 
         ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(request);
-        
+
         String source = extractWebhookSource(request.getRequestURI());
         boolean authenticated = false;
 
         if ("axway".equals(source)) {
             authenticated = authenticationService.authenticateAxwayWebhook(wrappedRequest);
-        } else if ("servicenow".equals(source)) {
-            authenticated = authenticationService.authenticateServiceNowWebhook(wrappedRequest);
         }
+        // ServiceNow webhooks are public and skip authentication
 
         if (authenticated) {
-            UsernamePasswordAuthenticationToken authToken = 
+            UsernamePasswordAuthenticationToken authToken =
                 new UsernamePasswordAuthenticationToken(source, null, Collections.emptyList());
             SecurityContextHolder.getContext().setAuthentication(authToken);
         }

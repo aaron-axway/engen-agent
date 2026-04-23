@@ -34,7 +34,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/actuator/health", "/webhooks/health").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()  // Allow H2 console access
-                .requestMatchers("/webhooks/axway", "/webhooks/servicenow").authenticated()
+                .requestMatchers("/webhooks/servicenow").permitAll()  // ServiceNow webhook is public (no auth)
+                .requestMatchers("/webhooks/axway").authenticated()
                 .anyRequest().denyAll()
             )
             .addFilterBefore(webhookAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

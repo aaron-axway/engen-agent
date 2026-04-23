@@ -16,10 +16,7 @@ services:
       - AXWAY_WEBHOOK_TOKEN=${AXWAY_WEBHOOK_TOKEN}
       - AXWAY_API_BASE_URL=${AXWAY_API_BASE_URL}
       - AXWAY_API_TOKEN=${AXWAY_API_TOKEN}
-      # ServiceNow webhook configuration
-      - SERVICENOW_WEBHOOK_SECRET=${SERVICENOW_WEBHOOK_SECRET}
-      - SERVICENOW_WEBHOOK_USERNAME=${SERVICENOW_WEBHOOK_USERNAME}
-      - SERVICENOW_WEBHOOK_PASSWORD=${SERVICENOW_WEBHOOK_PASSWORD}
+      # ServiceNow webhook endpoint is public (no authentication required)
       # H2 Console (for debugging - disable in production)
       - H2_CONSOLE_ENABLED=${H2_CONSOLE_ENABLED:-false}
     networks:

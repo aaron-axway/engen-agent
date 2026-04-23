@@ -17,8 +17,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 AXWAY_TOKEN=${AXWAY_WEBHOOK_TOKEN:-"test-axway-token"}
-SERVICENOW_USERNAME=${SERVICENOW_WEBHOOK_USERNAME:-"snow-user"}
-SERVICENOW_PASSWORD=${SERVICENOW_WEBHOOK_PASSWORD:-"snow-pass"}
+# ServiceNow webhook endpoint is public (no authentication required)
 
 print_header() {
     echo -e "\n${BLUE}=== $1 ===${NC}"
@@ -38,13 +37,6 @@ print_error() {
 
 print_warning() {
     echo -e "${YELLOW}⚠ $1${NC}"
-}
-
-# Function to encode credentials for Basic auth
-encode_basic_auth() {
-    local username="$1"
-    local password="$2"
-    echo -n "${username}:${password}" | base64
 }
 
 # Test Scenario 1: Complete API Approval Workflow
@@ -126,11 +118,8 @@ test_api_approval_workflow() {
         "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
     }'
     
-    auth_header=$(encode_basic_auth "$SERVICENOW_USERNAME" "$SERVICENOW_PASSWORD")
-    
     response=$(curl -s -w "\n%{http_code}" -X POST "$SERVICENOW_ENDPOINT" \
         -H "Content-Type: application/json" \
-        -H "Authorization: Basic $auth_header" \
         -d "$servicenow_change_payload")
     
     http_code=$(echo "$response" | tail -n1)
@@ -177,7 +166,6 @@ test_api_approval_workflow() {
     
     response=$(curl -s -w "\n%{http_code}" -X POST "$SERVICENOW_ENDPOINT" \
         -H "Content-Type: application/json" \
-        -H "Authorization: Basic $auth_header" \
         -d "$servicenow_approval_payload")
     
     http_code=$(echo "$response" | tail -n1)
@@ -265,11 +253,8 @@ test_subscription_approval_workflow() {
         "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
     }'
     
-    auth_header=$(encode_basic_auth "$SERVICENOW_USERNAME" "$SERVICENOW_PASSWORD")
-    
     response=$(curl -s -w "\n%{http_code}" -X POST "$SERVICENOW_ENDPOINT" \
         -H "Content-Type: application/json" \
-        -H "Authorization: Basic $auth_header" \
         -d "$servicenow_business_approval")
     
     http_code=$(echo "$response" | tail -n1)
@@ -326,14 +311,34 @@ test_rejection_workflow() {
     
     sleep 2
     
-    print_step "Step 2: ServiceNow rejection"
-    
-    # Note: For rejection workflow, we would send a "change.rejected" event
-    # but our current implementation only handles "change.approved"
-    # This demonstrates the need for rejection handling
-    
-    print_warning "Rejection workflow requires implementing 'change.rejected' event type"
-    print_step "This would send rejection reason back to Axway API"
+    print_step "Step 2: ServiceNow rejection (new format)"
+
+    servicenow_rejection_payload='{
+        "event": "change.rejected",
+        "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
+        "data": {
+            "request_number": "REQ-REJ-'$(date +%s)'",
+            "correlation_id": "'$correlation_id'",
+            "approval_status": "rejected",
+            "approved_by": "security.manager@company.com",
+            "comments": "Legacy API with known security issues - rejected per security policy"
+        }
+    }'
+
+    response=$(curl -s -w "\n%{http_code}" -X POST "$SERVICENOW_ENDPOINT" \
+        -H "Content-Type: application/json" \
+        -d "$servicenow_rejection_payload")
+
+    http_code=$(echo "$response" | tail -n1)
+    body=$(echo "$response" | head -n -1)
+
+    if [ "$http_code" = "200" ]; then
+        print_success "ServiceNow rejection processed - should propagate REJECTED state to Axway"
+        echo "Response: $body" | jq '.' 2>/dev/null || echo "Response: $body"
+    else
+        print_error "ServiceNow rejection failed with code: $http_code"
+        return 1
+    fi
 }
 
 # Test Database Queries

@@ -63,11 +63,6 @@ webhook:
       token: ${AXWAY_API_TOKEN:}
     platform:
       base-url: ${AXWAY_PLATFORM_BASE_URL:https://platform.axway.com/api/v1}
-  
-  servicenow:
-    secret: ${SERVICENOW_WEBHOOK_SECRET:}
-    username: ${SERVICENOW_WEBHOOK_USERNAME:}
-    password: ${SERVICENOW_WEBHOOK_PASSWORD:}
 
 management:
   endpoints:

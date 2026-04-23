@@ -93,11 +93,12 @@ The Webhook Service automates the creation of ServiceNow API Access Request tick
     │         APPROVAL CALLBACK WORKFLOW (ServiceNow to Service)         │
     └────────────────────────────────────────────────────────────────────┘
          │                              │                              │
-         │                              │ 13. Approval Webhook         │
+         │                              │ 13. Approval/Rejection Webhook│
          │                              │<──────────────────────────────│
          │                              │    POST /webhooks/servicenow │
-         │                              │    Basic Auth                │
+         │                              │    (public, no auth)         │
          │                              │    Event: change.approved    │
+         │                              │           change.rejected    │
          │                              │                              │
          │ 14. Update Approval Status   │                              │
          │<─────────────────────────────│                              │
@@ -284,25 +285,27 @@ INSERT INTO EVENT_RECORDS (
 );
 ```
 
-### Phase 7: ServiceNow Approval Callback
+### Phase 7: ServiceNow Approval/Rejection Callback
 
-**Trigger**: ServiceNow user approves the catalog request
+**Trigger**: ServiceNow user approves or rejects the catalog request
 
 **Endpoint**: `POST https://webhook-service.company.com/webhooks/servicenow`
 
-**Authentication**: Basic Auth or HMAC-SHA256 signature
+**Authentication**: None — endpoint is public
+
+**Supported events**: `change.approved`, `change.rejected` (both share the same payload shape)
 
 **Payload Example**:
 ```json
 {
-  "event": "change.approved",
+  "event": "change.rejected",
   "timestamp": "2025-11-18T14:30:00Z",
   "data": {
     "request_number": "REQ0012345",
     "correlation_id": "corr-123abc",
-    "approval_status": "approved",
+    "approval_status": "rejected",
     "approved_by": "john.doe@company.com",
-    "comments": "API access approved for production use"
+    "comments": "API access rejected for production use"
   }
 }
 ```
@@ -591,12 +594,12 @@ email:
 **Endpoint**: `/webhooks/servicenow`
 
 **Process**:
-1. Receive approval webhook from ServiceNow
-2. Authenticate request (Basic Auth or HMAC)
+1. Receive approval/rejection webhook from ServiceNow (endpoint is public, no authentication)
+2. Detect payload format: new ServiceNow format (`event` + `data`) or legacy generic format
 3. Extract `correlation_id` from callback payload
 4. Query database to find original event
-5. Call Axway API to update approval status
-6. Send approval email notification
+5. Call Axway API to update approval status (APPROVED or REJECTED)
+6. Send approval/rejection email notification
 7. Update event record in database
 
 **Code Flow**:
@@ -647,17 +650,17 @@ Content-Type: application/json
 - Compared against configured `AXWAY_WEBHOOK_TOKEN`
 - Constant-time comparison to prevent timing attacks
 
-#### 2. Basic Authentication (ServiceNow)
+#### 2. ServiceNow Callback Endpoint (Public)
+
 ```http
 POST /webhooks/servicenow HTTP/1.1
-Authorization: Basic dXNlcm5hbWU6cGFzc3dvcmQ=
 Content-Type: application/json
 ```
 
 **Validation**:
-- Credentials extracted and Base64 decoded
-- Username and password validated against configuration
-- Used for ServiceNow callback webhooks
+- Endpoint is unauthenticated — network-level controls (firewall, API gateway) are expected to restrict access
+- Payload shape is validated against `ServiceNowWebhookEvent` DTO (`@Size` constraints)
+- `correlation_id` from the payload must match an existing Axway event record for the callback to drive an Axway state change
 
 ### OAuth2 Authentication (Highmark)
 
@@ -1010,9 +1013,9 @@ T+4h+5s Service updates database (APPROVED)
 **Symptom**: Approval status not updating in Axway
 
 **Solution**:
-1. Verify ServiceNow webhook configuration
-2. Check correlation ID matching
-3. Verify callback authentication credentials
+1. Verify ServiceNow webhook configuration (endpoint is public — confirm network/firewall allows the request to reach the service)
+2. Check `correlation_id` in the callback matches an existing Axway event record
+3. Confirm payload uses the expected `event` + `data` shape (or valid legacy generic format)
 4. Check database for callback status
 
 ---
@@ -1032,7 +1035,7 @@ The Webhook Service provides a fully automated, secure, and reliable integration
 ---
 
 **For Questions or Support**:
-- **Documentation**: `CLAUDE.md`, `SERVICENOW_API_WORKFLOW.md`
+- **Documentation**: `CLAUDE.md`
 - **Configuration**: `.env.example`
 - **Database**: H2 Console at `http://localhost:8080/h2-console`
 - **Contact**: Integration Development Team

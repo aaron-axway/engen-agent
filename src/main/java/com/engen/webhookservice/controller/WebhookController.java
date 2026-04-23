@@ -1,11 +1,11 @@
 package com.engen.webhookservice.controller;
 
 import com.engen.webhookservice.dto.AxwayWebhookEvent;
+import com.engen.webhookservice.dto.ServiceNowWebhookEvent;
 import com.engen.webhookservice.dto.WebhookEvent;
 import com.engen.webhookservice.service.EventProcessingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Valid;
 import jakarta.validation.Validator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,13 +118,26 @@ public class WebhookController {
 
     @PostMapping(value = "/servicenow", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, String>> handleServiceNowWebhook(
-            @RequestBody @Valid WebhookEvent event,
+            @RequestBody Map<String, Object> rawPayload,
             @RequestHeader Map<String, String> headers) {
-        
-        log.info("Received ServiceNow webhook event: {}", event.getEventType());
-        log.debug("ServiceNow event payload: {}", event);
-        
+
         try {
+            WebhookEvent event;
+
+            // Check if this is the new ServiceNow format (has top-level 'event' + 'data' fields)
+            if (rawPayload.containsKey("event") && rawPayload.containsKey("data")) {
+                ServiceNowWebhookEvent snowEvent = objectMapper.convertValue(rawPayload, ServiceNowWebhookEvent.class);
+                validateEvent(snowEvent);
+                log.info("Received ServiceNow webhook event (native format): {}", snowEvent.getEvent());
+                event = snowEvent.toWebhookEvent();
+            } else {
+                // Parse as generic webhook format (backward compatibility)
+                event = objectMapper.convertValue(rawPayload, WebhookEvent.class);
+                validateEvent(event);
+                log.info("Received ServiceNow webhook event (generic format): {}", event.getEventType());
+                log.debug("ServiceNow event payload: {}", event);
+            }
+
             eventProcessingService.processServiceNowEvent(event, headers);
             
             HttpHeaders responseHeaders = new HttpHeaders();
